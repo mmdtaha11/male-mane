@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
@@ -5,6 +7,10 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 # --- تنظیمات اولیه ---
 # در این قسمت توکن ربات خود را قرار دهید
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
+
+# ❗ مهم: لیست آیدی‌های عددی ادمین‌ها
+# نتیجه تست برای تمام آیدی‌های موجود در این لیست ارسال می‌شود
+ADMIN_IDS = [5044871490, 5107444649] # <--- آیدی‌های ادمین‌ها
 
 # فعال کردن لاگ برای دیباگ کردن
 logging.basicConfig(
@@ -64,7 +70,7 @@ QUESTIONS = [
             {"text": "با بی‌خیالی ادامه می‌دهم", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
-        {
+    {
         "text": "سؤال ۶: وقتی کسی تو را تحقیر می‌کند؟",
         "answers": [
             {"text": "می‌بخشمش", "scores": {"angel": 3, "human": 0, "demon": 0}},
@@ -123,20 +129,40 @@ GROUP_LINKS = {
     "main": "https://t.me/+OpZRxrzRTyQ5OTc8"
 }
 
+race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
+
 # --- توابع اصلی ربات ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """دستور /start را مدیریت می‌کند. شروع آزمون."""
-    context.user_data.clear() # پاک کردن داده‌های قبلی کاربر
+    if 'result_race' in context.user_data:
+        player_name = context.user_data.get('player_name', 'شما')
+        result_race = context.user_data['result_race']
+        
+        result_text = (
+            f"سلام {player_name}!\n"
+            f"شما قبلاً در آزمون شرکت کرده‌اید.\n\n"
+            f"نتیجه شما: **{race_names[result_race]}**\n\n"
+            f"می‌توانید از طریق دکمه‌های زیر وارد گروه‌ها شوید:"
+        )
+        keyboard = [
+            [InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
+            [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
+        return
+
     context.user_data['state'] = 'awaiting_name'
     await update.message.reply_text("سلام! به رول پلی میستریس ورلد خوش اومدی.\nبرای شروع، لطفاً نام خودت رو وارد کن:")
+
 
 async def name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """نام کاربر را دریافت و آزمون را شروع می‌کند."""
     user_name = update.message.text
     context.user_data['player_name'] = user_name
     context.user_data['current_question'] = 0
-    context.user_data['answers'] = {} # برای ذخیره پاسخ‌های کاربر
+    context.user_data['answers'] = {} 
     context.user_data['scores'] = {"angel": 0, "human": 0, "demon": 0}
 
     await update.message.reply_text(f"خوش اومدی {user_name}!\nبریم سراغ سوال اول:")
@@ -147,22 +173,18 @@ def build_question_keyboard(question_index, user_answers):
     keyboard = []
     question = QUESTIONS[question_index]
     
-    # ساخت دکمه‌های گزینه‌ها
     for i, answer in enumerate(question["answers"]):
         prefix = "✅ " if user_answers.get(question_index) == i else ""
         button = InlineKeyboardButton(f'{prefix}{answer["text"]}', callback_data=f"ans_{question_index}_{i}")
         keyboard.append([button])
         
-    # ساخت دکمه‌های ناوبری
     nav_buttons = []
     if question_index > 0:
         nav_buttons.append(InlineKeyboardButton("⬅️ سوال قبلی", callback_data=f"nav_prev_{question_index}"))
     if question_index < len(QUESTIONS) - 1:
-        # فقط در صورتی دکمه بعدی را نشان بده که به این سوال جواب داده شده باشد
         if question_index in user_answers:
              nav_buttons.append(InlineKeyboardButton("سوال بعدی ➡️", callback_data=f"nav_next_{question_index}"))
     else:
-        # اگر سوال آخر است، دکمه "مشاهده نتیجه" را نشان بده
         if question_index in user_answers:
             nav_buttons.append(InlineKeyboardButton("🏆 مشاهده نتیجه", callback_data="finish_quiz"))
 
@@ -175,7 +197,6 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     
-    # اگر message_id داده شده باشد، پیام را ویرایش می‌کند، در غیر این صورت پیام جدید می‌فرستد
     if message_id:
         await context.bot.edit_message_text(
             chat_id=message.chat_id,
@@ -190,7 +211,7 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """پاسخ‌های دکمه‌ای را مدیریت می‌کند."""
     query = update.callback_query
-    await query.answer() # برای اینکه تلگرام بفهمد که کلیک دریافت شده است
+    await query.answer() 
     
     data = query.data.split('_')
     action = data[0]
@@ -198,11 +219,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if action == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
-        
-        # ذخیره پاسخ
         context.user_data['answers'][question_index] = answer_index
-        
-        # بروزرسانی و نمایش مجدد سوال با تیک کنار گزینه انتخاب شده
         await send_question(query.message, context, message_id=query.message.message_id)
 
     elif action == "nav":
@@ -217,7 +234,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_question(query.message, context, message_id=query.message.message_id)
 
     elif action == "finish":
-        await calculate_and_send_result(query.message, context)
+        await calculate_and_send_result(query.message, context, update.effective_user)
 
 
 def calculate_scores(user_answers):
@@ -229,47 +246,55 @@ def calculate_scores(user_answers):
             scores[race] += score
     return scores
 
-async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE):
-    """نتیجه نهایی را محاسبه و ارسال می‌کند."""
+async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
+    """نتیجه نهایی را محاسبه، برای کاربر و ادمین‌ها ارسال می‌کند."""
     final_scores = calculate_scores(context.user_data['answers'])
     
-    # پیدا کردن نژاد با بیشترین امتیاز
-    # اولویت در صورت تساوی: فرشته > انسان > شیطان
     races_sorted = sorted(final_scores.items(), key=lambda item: (-item[1], ['angel', 'human', 'demon'].index(item[0])))
     result_race = races_sorted[0][0]
-
-    race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
     
+    context.user_data['result_race'] = result_race
     player_name = context.user_data.get('player_name', 'بازیکن')
     
-    # ساخت متن نتیجه
-    result_text = (
+    # ۱. ارسال نتیجه به کاربر
+    result_text_user = (
         f"خب {player_name}، آزمون تموم شد!\n\n"
-        f"امتیازات شما:\n"
-        f"👼 فرشته: {final_scores['angel']}\n"
-        f"👤 انسان: {final_scores['human']}\n"
-        f"😈 شیطان: {final_scores['demon']}\n\n"
         f"نتیجه نهایی: **شما یک {race_names[result_race]} هستید!**\n\n"
         f"بر اساس شخصیت شما، به گروه زیر دعوت می‌شوید:"
     )
-    
-    # ساخت دکمه‌های لینک
     keyboard = [
         [InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
         [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
-    await message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
-    # پاک کردن داده‌های کاربر برای آزمون بعدی
-    context.user_data.clear()
+    # ۲. ارسال گزارش به همه ادمین‌ها در لیست
+    if ADMIN_IDS:
+        admin_report_text = (
+            f"👤 گزارش تست جدید:\n\n"
+            f"نام بازیکن: {player_name}\n"
+            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
+            f"آیدی عددی: `{user.id}`\n\n"
+            f"نتیجه تست: **{race_names[result_race]}**\n\n"
+            f"امتیازات:\n"
+            f"👼 فرشته: {final_scores['angel']}\n"
+            f"👤 انسان: {final_scores['human']}\n"
+            f"😈 شیطان: {final_scores['demon']}"
+        )
+        for admin_id in ADMIN_IDS:
+            try:
+                await context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
+            except Exception as e:
+                logger.error(f"ارسال پیام به ادمین {admin_id} با خطا مواجه شد: {e}")
 
 async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """پیام‌های متنی را به تابع مناسب هدایت می‌کند."""
     if context.user_data.get('state') == 'awaiting_name':
+        context.user_data['state'] = '' # جلوگیری از اجرای دوباره با هر پیام
         await name_handler(update, context)
     else:
-        await update.message.reply_text("برای شروع آزمون جدید، دستور /start را ارسال کنید.")
+        await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
 
 
 # --- تابع اصلی برای اجرای ربات ---
@@ -278,16 +303,10 @@ def main():
     """ربات را اجرا می‌کند."""
     application = Application.builder().token(BOT_TOKEN).build()
 
-    # تعریف دستورات
     application.add_handler(CommandHandler("start", start_command))
-    
-    # تعریف کنترل‌گر دکمه‌ها
     application.add_handler(CallbackQueryHandler(button_handler))
-    
-    # تعریف کنترل‌گر پیام‌های متنی
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
 
-    # اجرای ربات
     print("ربات در حال اجراست...")
     application.run_polling()
 
