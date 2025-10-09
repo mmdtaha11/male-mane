@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- تنظیمات اولیه ---
-# در این قسمت توکن ربات خود را قرار دهید
+# در این قسمت توکن ربات خود را قرار دهی
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
 
 # ❗ مهم: لیست آیدی‌های عددی ادمین‌ها
