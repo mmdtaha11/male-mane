@@ -282,6 +282,12 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             f"👤 انسان: {final_scores['human']}\n"
             f"😈 شیطان: {final_scores['demon']}"
         )
+
+        # جدید: ذخیره نتیجه در حافظه ربات برای دستور /results
+        if 'all_results' not in context.bot_data:
+            context.bot_data['all_results'] = []
+        context.bot_data['all_results'].append(admin_report_text)
+
         for admin_id in ADMIN_IDS:
             try:
                 await context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
@@ -297,13 +303,34 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
 
 
-# --- تابع اصلی برای اجرای ربات ---
+# --- دستور جدید فقط برای ادمین‌ها ---
+async def get_results_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("❌ شما اجازه دسترسی به این دستور را ندارید.")
+        return
 
+    all_results = context.bot_data.get('all_results', [])
+    if not all_results:
+        await update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
+        return
+    
+    # نمایش ۱۰ نتیجه آخر
+    last_10_results = all_results[-10:]
+    
+    response_text = "📋 **آخرین نتایج ثبت شده:**\n\n" + "\n\n---\n\n".join(last_10_results)
+    
+    await update.message.reply_text(response_text, parse_mode='Markdown')
+
+
+# --- تابع اصلی برای اجرای ربات ---
 def main():
     """ربات را اجرا می‌کند."""
     application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start_command))
+    # جدید: ثبت دستور /results
+    application.add_handler(CommandHandler("results", get_results_command))
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
 
@@ -312,4 +339,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
