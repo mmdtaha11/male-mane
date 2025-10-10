@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import random # جدید: این کتابخانه برای بُر زدن گزینه‌ها اضافه شد
+import random # این کتابخانه برای بُر زدن گزینه‌ها اضافه شد
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
@@ -15,106 +15,106 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- داده‌های سوالات و گروه‌ها ---
-# (این بخش بدون تغییر باقی می‌ماند)
+# ✨✨✨ بخش سوالات با محتوای جدید شما جایگزین شد ✨✨✨
 QUESTIONS = [
     {
-        "text": "سؤال ۱: اگر ببینی کسی در خیابان گرسنه است چه کار می‌کنی؟",
+        "text": "❖ سؤال ۱\n\nدر رویا، کسی درِ چوبی را نیمه‌باز می‌گذارد و می‌رود. درونش نوری لرزان است.",
         "answers": [
-            {"text": "غذایم را با او تقسیم می‌کنم", "scores": {"angel": 2, "human": 1, "demon": 0}},
-            {"text": "به او پول می‌دهم", "scores": {"angel": 1, "human": 2, "demon": 0}},
-            {"text": "بی‌تفاوت رد می‌شوم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "مسخره‌اش می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "وانمود می‌کنم ندیدم", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "صبر می‌کنم تا خودش بازگردد.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "وارد می‌شوم؛ هر دری برای رفتن ساخته شده.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "از کنارش رد می‌شوم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "پشت در می‌ایستم و گوش می‌دهم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "در را می‌بندم تا نور بماند همان‌جا.", "scores": {"angel": 1, "human": 0, "demon": 1}},
         ],
     },
     {
-        "text": "سؤال ۲: اگر دشمن تو زخمی روی زمین افتاده باشد؟",
+        "text": "❖ سؤال ۲\n\nپرنده‌ای زخمی روی شانه‌ات می‌نشیند و می‌گوید: «پرواز فراموشم شده.»",
         "answers": [
-            {"text": "او را درمان می‌کنم", "scores": {"angel": 3, "human": 0, "demon": 0}},
-            {"text": "به او آب می‌دهم", "scores": {"angel": 2, "human": 1, "demon": 0}},
-            {"text": "فقط رد می‌شوم", "scores": {"angel": 0, "human": 1, "demon": 1}},
-            {"text": "به او ضربه آخر را می‌زنم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "به او می‌خندم و می‌روم", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "سکوت می‌کنم؛ گاهی فراموشی نوعی آرامش است.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "می‌پرسم: «می‌خواهی یاد بگیری یا بیاسایی؟»", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "پرهایش را نوازش می‌کنم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "چشم می‌بندم تا هر دو رویا ببینیم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "پرنده را رها می‌کنم؛ پرواز باید خودش بازگردد.", "scores": {"angel": 1, "human": 0, "demon": 2}},
         ],
     },
     {
-        "text": "سؤال ۳: وقتی به قدرت می‌رسی، با مردم چه می‌کنی؟",
+        "text": "❖ سؤال ۳\n\nدر اتاقی پر از آینه، تنها یکی تصویرت را نشان نمی‌دهد.",
         "answers": [
-            {"text": "از قدرت برای کمک استفاده می‌کنم", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "عدالت را برقرار می‌کنم", "scores": {"angel": 1, "human": 2, "demon": 0}},
-            {"text": "برای سود شخصی استفاده می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "مخالفان را نابود می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "فقط از خودم و خانواده‌ام حمایت می‌کنم", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "در آن آینه خیره می‌شوم تا ببینم چه پنهان کرده.", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "از کنارش می‌گذرم؛ بعضی چیزها باید خاموش بمانند.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "تصویر دیگر آینه‌ها را نگاه می‌کنم تا یادم بیاید کی هستم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "آینه‌ی خاموش را لمس می‌کنم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "چراغ را خاموش می‌کنم تا هیچ‌کدام تصویر ندهند.", "scores": {"angel": 1, "human": 0, "demon": 1}},
         ],
     },
     {
-        "text": "سؤال ۴: اگر راز بزرگی درباره دوستت بدانی؟",
+        "text": "❖ سؤال ۴\n\nزمانی که باران از یاد می‌رود و زمین تشنه است،",
         "answers": [
-            {"text": "حفظش می‌کنم", "scores": {"angel": 2, "human": 2, "demon": 0}},
-            {"text": "در شرایط لازم به او کمک می‌کنم", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "از آن علیه او استفاده می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "برای سرگرمی لو می‌دهم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "بی‌تفاوت می‌مانم", "scores": {"angel": 0, "human": 1, "demon": 0}},
+            {"text": "دعا می‌کنم تا آسمان به‌خاطر بیاورد.", "scores": {"angel": 3, "human": 0, "demon": 0}},
+            {"text": "چاهی می‌کنم تا خودم آب را بیابم.", "scores": {"angel": 0, "human": 3, "demon": 0}},
+            {"text": "لبخند می‌زنم؛ هر تشنگی درسی دارد.", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "قطره‌ای اشک بر خاک می‌چکانم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "زمین را می‌بوسم و می‌گذرم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
         ],
     },
     {
-        "text": "سؤال ۵: در نبرد سخت، وقتی یار تو زخمی می‌شود؟",
+        "text": "❖ سؤال ۵\n\nدر برابر دو صدای درونی ایستاده‌ای؛ یکی می‌گوید “ببخش”، دیگری “به‌یاد بسپار”.",
         "answers": [
-            {"text": "او را از میدان بیرون می‌برم", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "کنارش می‌مانم تا بمیریم یا زنده بمانیم", "scores": {"angel": 1, "human": 2, "demon": 0}},
-            {"text": "او را رها می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "از ضعف او استفاده می‌کنم تا خودم قوی‌تر شوم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "با بی‌خیالی ادامه می‌دهم", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "هر دو را می‌پذیرم.", "scores": {"angel": 0, "human": 3, "demon": 0}},
+            {"text": "اولی را خاموش می‌کنم تا دومی بماند.", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "دومی را آرام می‌کنم تا سکوت بماند.", "scores": {"angel": 3, "human": 0, "demon": 0}},
+            {"text": "از هر دو می‌خواهم با هم سخن بگویند.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "لبخند می‌زنم و راه خودم را می‌روم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
         ],
     },
     {
-        "text": "سؤال ۶: وقتی کسی تو را تحقیر می‌کند؟",
+        "text": "❖ سؤال ۶\n\nکتابی بی‌نام در برابرت باز می‌شود و واژه‌هایت را بر صفحه می‌نویسد.",
         "answers": [
-            {"text": "می‌بخشمش", "scores": {"angel": 3, "human": 0, "demon": 0}},
-            {"text": "نادیده می‌گیرم", "scores": {"angel": 0, "human": 2, "demon": 0}},
-            {"text": "نقشه انتقام می‌کشم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "او را مسخره می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "با آرامش جواب می‌دهم", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "می‌خوانم تا خودم را بشناسم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "می‌گذارم بنویسد، بدون خواندن.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "قلم را می‌گیرم و خودم ادامه می‌دهم.", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "کتاب را می‌بندم؛ بعضی سرنوشت‌ها ناتمام باید بمانند.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "چند واژه پاک می‌کنم و می‌نویسم: «شروع دوباره».", "scores": {"angel": 0, "human": 1, "demon": 2}},
         ],
     },
     {
-        "text": "سؤال ۷: اگر بتوانی ذهن مردم را کنترل کنی؟",
+        "text": "❖ سؤال ۷\n\nکسی می‌گوید: «جهان تو را تماشا می‌کند.»",
         "answers": [
-            {"text": "هرگز استفاده نمی‌کنم", "scores": {"angel": 3, "human": 0, "demon": 0}},
-            {"text": "فقط برای کمک استفاده می‌کنم", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "برای منافع خودم استفاده می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "همه را برده می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "برای عدالت و نظم", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "پاسخ می‌دهم: «باشد، اما من نیز او را می‌بینم.»", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "می‌گویم: «بگذار ببیند، من چیزی پنهان نمی‌کنم.»", "scores": {"angel": 3, "human": 0, "demon": 0}},
+            {"text": "لبخند می‌زنم: «تماشا می‌کند، چون دیگر کاری ندارد.»", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "شانه بالا می‌اندازم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "چشمانم را می‌بندم تا هر دو ناپدید شویم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
-        "text": "سؤال ۸: در برابر وسوسه قدرت سیاه؟",
+        "text": "❖ سؤال ۸\n\nاز تو می‌پرسند: «آیا به سرنوشت ایمان داری؟»",
         "answers": [
-            {"text": "مقاومت می‌کنم", "scores": {"angel": 3, "human": 0, "demon": 0}},
-            {"text": "مردد می‌شوم ولی نمی‌پذیرم", "scores": {"angel": 0, "human": 2, "demon": 0}},
-            {"text": "از آن استفاده می‌کنم", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "با شوق می‌پذیرم", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "فقط امتحان می‌کنم", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "نه؛ ایمان فقط برای بی‌قدرت‌هاست.", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "آری؛ چون معنا می‌دهد به رنج.", "scores": {"angel": 3, "human": 0, "demon": 0}},
+            {"text": "نمی‌دانم؛ شاید ما هم بخشی ازش باشیم.", "scores": {"angel": 0, "human": 3, "demon": 0}},
+            {"text": "به لبخند جواب می‌دهم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "می‌گویم: «اگر سرنوشت من را باور داشته باشد، من هم او را.»", "scores": {"angel": 0, "human": 1, "demon": 2}},
         ],
     },
     {
-        "text": "سؤال ۹: اگر انتخاب بین نجات یک نفر یا هزار نفر داشته باشی؟",
+        "text": "❖ سؤال ۹\n\nکسی در کنار جاده افتاده و نام تو را زمزمه می‌کند.",
         "answers": [
-            {"text": "هزار نفر", "scores": {"angel": 3, "human": 0, "demon": 0}},
-            {"text": "کسی که به من نزدیک‌تر است", "scores": {"angel": 0, "human": 2, "demon": 0}},
-            {"text": "کسی که منافع بیشتری دارد", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "هیچ‌کس", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "قرعه می‌کشم", "scores": {"angel": 0, "human": 1, "demon": 0}},
+            {"text": "می‌ایستم و گوش می‌دهم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "خم می‌شوم تا چشمانش را ببینم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "نامش را تکرار می‌کنم تا صدا گم شود.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "عبور می‌کنم؛ شاید خواب باشد.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "در سکوت دعا می‌کنم که فراموشم کند.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
-        "text": "سؤال ۱۰: بزرگ‌ترین ارزش تو چیست؟",
+        "text": "❖ سؤال ۱۰\n\nدر آستانه‌ی دریا، صدایی از عمق می‌گوید: «بازگرد، هنوز وقت نیست.»",
         "answers": [
-            {"text": "ایثار", "scores": {"angel": 3, "human": 0, "demon": 0}},
-            {"text": "عدالت", "scores": {"angel": 0, "human": 3, "demon": 0}},
-            {"text": "قدرت", "scores": {"angel": 0, "human": 0, "demon": 3}},
-            {"text": "آزادی", "scores": {"angel": 2, "human": 1, "demon": 0}},
-            {"text": "برتری شخصی", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "بازمی‌گردم.", "scores": {"angel": 3, "human": 0, "demon": 0}},
+            {"text": "پیش می‌روم؛ هر صدا آزمونی‌ست.", "scores": {"angel": 0, "human": 0, "demon": 3}},
+            {"text": "می‌ایستم تا موج تصمیم بگیرد.", "scores": {"angel": 0, "human": 3, "demon": 0}},
+            {"text": "می‌گویم: «اگر هنوز وقت نیست، پس چرا صدام زدی؟»", "scores": {"angel": 0, "human": 1, "demon": 2}},
+            {"text": "لبخند می‌زنم و رد صدایم را دنبال می‌کنم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
 ]
