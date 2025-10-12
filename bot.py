@@ -225,8 +225,15 @@ def calculate_scores(user_answers):
             scores[race] += score
     return scores
 
+# --- ⚠️ این تابع تغییر کرده است ⚠️ ---
 async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
     final_scores = calculate_scores(context.user_data['answers'])
+    
+    # --- ✨ تغییر جدید: حذف موقت نتیجه شیطان ---
+    # برای اینکه تا اطلاع ثانوی کسی شیطان نشود، امتیاز آن را منفی می‌کنیم
+    final_scores['demon'] = -1 
+    # --- پایان تغییر ---
+
     races_sorted = sorted(final_scores.items(), key=lambda item: (-item[1], ['angel', 'human', 'demon'].index(item[0])))
     result_race = races_sorted[0][0]
     context.user_data['result_race'] = result_race
@@ -241,15 +248,17 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
     if ADMIN_IDS:
+        # برای گزارش به ادمین، امتیاز اصلی شیطان را نمایش می‌دهیم
+        original_demon_score = calculate_scores(context.user_data['answers'])['demon']
         admin_report_text = (f"👤 گزارش تست جدید:\n\n"
                            f"نام بازیکن: {player_name}\n"
                            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
                            f"آیدی عددی: `{user.id}`\n\n"
-                           f"نتیجه تست: **{race_names[result_race]}**\n\n"
+                           f"نتیجه تست (بدون شیطان): **{race_names[result_race]}**\n\n"
                            f"امتیازات:\n"
                            f"👼 فرشته: {final_scores['angel']}\n"
                            f"👤 انسان: {final_scores['human']}\n"
-                           f"😈 شیطان: {final_scores['demon']}")
+                           f"😈 شیطان (امتیاز اصلی): {original_demon_score}") # نمایش امتیاز واقعی
         if 'all_results' not in context.bot_data:
             context.bot_data['all_results'] = []
         context.bot_data['all_results'].append(admin_report_text)
