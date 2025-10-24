@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
-
 import logging
-import random # این کتابخانه برای بُر زدن گزینه‌ها اضافه شد
+import random
+import os  # <-- این کتابخانه برای خواندن متغیرها از Railway اضافه شد
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from flask import Flask, request  # <-- این کتابخانه‌ها برای وب‌سرور اضافه شدند
 
 # --- تنظیمات اولیه ---
-# ⚠️ توکن ربات خود را در اینجا قرار دهید
-BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
-# ⚠️ آیدی عددی ادمین‌ها را در اینجا قرار دهید
-ADMIN_IDS = [5044871490, 5107444649]
+# ⚠️ توکن و آیدی‌ها را از اینجا بردارید
+# BOT_TOKEN = "YOUR_TOKEN"  <-- حذف شد
+# ADMIN_IDS = [123456]       <-- حذف شد
+
+# توکن و آیدی‌ها از متغیرهای Railway خوانده می‌شوند
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_IDS_STRING = os.environ.get("ADMIN_IDS", "")
+ADMIN_IDS = [int(admin_id) for admin_id in ADMIN_IDS_STRING.split(',') if admin_id.isdigit()]
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -17,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- داده‌های سوالات و گروه‌ها ---
-# ✨✨✨ بخش سوالات با محتوای جدید شما جایگزین شد ✨✨✨
+# ✨ سوالات جدید شما ✨
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -70,7 +75,7 @@ QUESTIONS = [
         ],
     },
     {
-        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره، چه واک-نشون می‌دی؟",
+        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره، چه واکنشی نشون می‌دی؟",
         "answers": [
             {"text": "سعی می‌کنم دلیلش رو بفهمم.", "scores": {"angel": 2}},
             {"text": "برام مهم نیست، هرکس نظر خودش رو داره.", "scores": {"human": 2}},
@@ -131,7 +136,7 @@ GROUP_LINKS = {
 
 race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
 
-# --- توابع اصلی ربات ---
+# --- توابع اصلی ربات (بدون تغییر زیاد) ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 'result_race' in context.user_data:
@@ -159,7 +164,6 @@ async def name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_question(update.message, context)
 
 def build_question_keyboard(question_index, user_answers):
-    """دکمه‌های گزینه‌ها را به صورت نامرتب و دکمه‌های ناوبری را می‌سازد."""
     keyboard = []
     question = QUESTIONS[question_index]
     
@@ -223,13 +227,10 @@ def calculate_scores(user_answers):
                 scores[race] += score
     return scores
 
-# --- ⚠️ این تابع تغییر کرده است ⚠️ ---
 async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
     final_scores = calculate_scores(context.user_data['answers'])
     
-    # --- ✨ تغییر جدید: منطق حذف شیطان حذف شد و اکنون به درستی محاسبه می‌شود ---
-    # final_scores['demon'] = -1  <- این خط حذف شد
-
+    # ✨ نژاد شیطان بازگردانده شد و به درستی محاسبه می‌شود
     races_sorted = sorted(final_scores.items(), key=lambda item: (-item[1], ['angel', 'human', 'demon'].index(item[0])))
     result_race = races_sorted[0][0]
     context.user_data['result_race'] = result_race
@@ -244,7 +245,6 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
     if ADMIN_IDS:
-        # --- ✨ تغییر جدید: گزارش ادمین اصلاح شد ---
         admin_report_text = (f"👤 گزارش تست جدید:\n\n"
                            f"نام بازیکن: {player_name}\n"
                            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
@@ -253,7 +253,7 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
                            f"امتیازات:\n"
                            f"👼 فرشته: {final_scores['angel']}\n"
                            f"👤 انسان: {final_scores['human']}\n"
-                           f"😈 شیطان: {final_scores['demon']}") # امتیاز شیطان اکنون به درستی گزارش می‌شود
+                           f"😈 شیطان: {final_scores['demon']}")
         
         if 'all_results' not in context.bot_data:
             context.bot_data['all_results'] = []
@@ -272,7 +272,7 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
 
-async def get_results_command(update: Update, context: ContextTypes.DEFAULT_T-YPE):
+async def get_results_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
         await update.message.reply_text("❌ شما اجازه دسترسی به این دستور را ندارید.")
@@ -285,14 +285,53 @@ async def get_results_command(update: Update, context: ContextTypes.DEFAULT_T-YP
     response_text = "📋 **آخرین نتایج ثبت شده:**\n\n" + "\n\n---\n\n".join(last_10_results)
     await update.message.reply_text(response_text, parse_mode='Markdown')
 
-def main():
-    application = Application.builder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("results", get_results_command))
-    application.add_handler(CallbackQueryHandler(button_handler))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
-    print("ربات در حال اجراست...")
-    application.run_polling()
+# --- 🚀 بخش جدید: راه‌اندازی وب‌سرور Flask ---
+app = Flask(__name__)
+ptb_app = Application.builder().token(BOT_TOKEN).build()
+
+# افزودن تمام دستورات به ptb_app
+ptb_app.add_handler(CommandHandler("start", start_command))
+ptb_app.add_handler(CommandHandler("results", get_results_command))
+ptb_app.add_handler(CallbackQueryHandler(button_handler))
+ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
+
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+async def webhook():
+    """این تابع پیام‌ها را از تلگرام دریافت کرده و به ربات می‌دهد."""
+    if request.is_json:
+        update_json = request.get_json()
+        update = Update.de_json(update_json, ptb_app.bot)
+        await ptb_app.process_update(update)
+    return "ok", 200
+
+@app.route("/")
+def index():
+    """یک صفحه ساده که نشان می‌دهد ربات در حال اجراست."""
+    return "Bot is running!", 200
+
+async def setup_webhook():
+    """این تابع هنگام شروع به کار، وب‌هوک را در تلگرام ثبت می‌کند."""
+    # این آدرس عمومی است که Railway به شما می‌دهد
+    public_url = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+    if public_url:
+        webhook_url = f"https://{public_url}/{BOT_TOKEN}"
+        await ptb_app.bot.set_webhook(url=webhook_url)
+        logger.info(f"Webhook set to {webhook_url}")
+    else:
+        logger.warning("RAILWAY_PUBLIC_DOMAIN environment variable not set. Webhook not set.")
 
 if __name__ == "__main__":
-    main()
+    # به جای run_polling()، ما سرور Flask را اجرا می‌کنیم
+    import asyncio
+    
+    # اول وب‌هوک را تنظیم می‌کنیم
+    try:
+        asyncio.run(setup_webhook())
+    except Exception as e:
+        logger.error(f"Error setting up webhook: {e}")
+
+    # سپس سرور وب را اجرا می‌کنیم
+    # Railway پورت را از طریق متغیر PORT مشخص می‌کند
+    port = int(os.environ.get("PORT", 8080))
+    # '0.0.0.0' مهم است تا Railway بتواند به آن دسترسی داشته باشد
+    app.run(host="0.0.0.0", port=port, debug=False)
