@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
+
 import logging
-import random
-import os  # <-- این کتابخانه برای خواندن متغیرها از Railway اضافه شد
+import random # این کتابخانه برای بُر زدن گزینه‌ها اضافه شد
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
-from flask import Flask, request  # <-- این کتابخانه‌ها برای وب‌سرور اضافه شدند
 
 # --- تنظیمات اولیه ---
-# ⚠️ توکن و آیدی‌ها را از اینجا بردارید
-# BOT_TOKEN = "YOUR_TOKEN"  <-- حذف شد
-# ADMIN_IDS = [123456]       <-- حذف شد
-
-# توکن و آیدی‌ها از متغیرهای Railway خوانده می‌شوند
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_IDS_STRING = os.environ.get("ADMIN_IDS", "")
-ADMIN_IDS = [int(admin_id) for admin_id in ADMIN_IDS_STRING.split(',') if admin_id.isdigit()]
+BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
+ADMIN_IDS = [5044871490, 5107444649]
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -22,111 +15,113 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- داده‌های سوالات و گروه‌ها ---
-# ✨ سوالات جدید شما ✨
+
+# --- ✨✨✨ تغییر اول: بخش سوالات با محتوای جدید شما جایگزین شد ✨✨✨
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
         "answers": [
-            {"text": "سعی می‌کنم هر دو طرف رو آروم کنم.", "scores": {"angel": 2}},
-            {"text": "اول گوش می‌دم، بعد تصمیم می‌گیرم کدوم حق داره.", "scores": {"human": 2}},
-            {"text": "نمی‌خوام درگیر شم، ولی یادم می‌مونه کی باعث دردسر شد.", "scores": {"demon": 2}},
-            {"text": "سعی می‌کنم کنترل موقعیت رو بگیرم تا دعوا تموم شه.", "scores": {"demon": 1, "human": 1}},
-            {"text": "کاری می‌کنم هر دو بفهمن که بی‌فایده بود بحث کنن.", "scores": {"human": 1, "angel": 1}},
+            {"text": "سعی می‌کنم هر دو طرف رو آروم کنم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "اول گوش می‌دم، بعد تصمیم می‌گیرم کدوم حق داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "نمی‌خوام درگیر شم، ولی یادم می‌مونه کی باعث دردسر شد.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "سعی می‌کنم کنترل موقعیت رو بگیرم تا دعوا تموم شه.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "کاری می‌کنم هر دو بفهمن که بی‌فایده بود بحث کنن.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
         "text": "🧩 سؤال ۲\n\nوقتی اشتباه بزرگی می‌کنی، اولین فکرت چیه؟",
         "answers": [
-            {"text": "باید جبرانش کنم، حتی اگه سخته.", "scores": {"angel": 2}},
-            {"text": "همه اشتباه می‌کنن، مهم اینه یاد بگیرم.", "scores": {"human": 2}},
-            {"text": "نباید بذارم کسی بفهمه.", "scores": {"demon": 2}},
-            {"text": "دنیا ناعادله، ولی باید قوی‌تر شم.", "scores": {"demon": 1, "human": 1}},
-            {"text": "شاید این اشتباه دلیل خاصی داشته.", "scores": {"angel": 1, "human": 1}},
+            {"text": "باید جبرانش کنم، حتی اگه سخته.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "همه اشتباه می‌کنن، مهم اینه یاد بگیرم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "نباید بذارم کسی بفهمه.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "دنیا ناعادله، ولی باید قوی‌تر شم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "شاید این اشتباه دلیل خاصی داشته.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
         "text": "🧩 سؤال ۳\n\nتو خلوتت بیشتر به چی فکر می‌کنی؟",
         "answers": [
-            {"text": "آینده‌ای بهتر برای همه.", "scores": {"angel": 2}},
-            {"text": "راهی برای پیشرفت خودم.", "scores": {"human": 2}},
-            {"text": "اینکه چه‌طور میشه دیگران رو درک کرد.", "scores": {"angel": 1, "human": 1}},
-            {"text": "کنترل و قدرتی که هنوز ندارم.", "scores": {"demon": 2}},
-            {"text": "اینکه دنیا چرا این‌قدر بی‌نظم و بی‌رحمه.", "scores": {"demon": 1, "human": 1}},
+            {"text": "آینده‌ای بهتر برای همه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "راهی برای پیشرفت خودم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "اینکه چه‌طور میشه دیگران رو درک کرد.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "کنترل و قدرتی که هنوز ندارم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "اینکه دنیا چرا این‌قدر بی‌نظم و بی‌رحمه.", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
     {
         "text": "🧩 سؤال ۴\n\nوقتی یه نفر ناامید و خسته‌ست، چطور رفتار می‌کنی؟",
         "answers": [
-            {"text": "باهاش حرف می‌زنم تا حس بهتری پیدا کنه.", "scores": {"angel": 2}},
-            {"text": "بهش یادآوری می‌کنم که خودش باید قوی بمونه.", "scores": {"human": 2}},
-            {"text": "اگه خودش خواست، کمکش می‌کنم.", "scores": {"human": 1, "angel": 1}},
-            {"text": "سکوت می‌کنم؛ بعضی چیزا نیاز به حرف ندارن.", "scores": {"human": 1, "demon": 1}},
-            {"text": "می‌ذارم خودش تا ته سقوط بره، چون فقط اونطوری رشد می‌کنه.", "scores": {"demon": 2}},
+            {"text": "باهاش حرف می‌زنم تا حس بهتری پیدا کنه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "بهش یادآوری می‌کنم که خودش باید قوی بمونه.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "اگه خودش خواست، کمکش می‌کنم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "سکوت می‌کنم؛ بعضی چیزا نیاز به حرف ندارن.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "می‌ذارم خودش تا ته سقوط بره، چون فقط اونطوری رشد می‌کنه.", "scores": {"angel": 0, "human": 0, "demon": 2}},
         ],
     },
     {
         "text": "🧩 سؤال ۵\n\nکدوم جمله بیشتر شبیه طرز فکرت هست؟",
         "answers": [
-            {"text": "نور همیشه در تاریکی هم راهی پیدا می‌کنه.", "scores": {"angel": 2}},
-            {"text": "هیچ چیز مطلق نیست؛ فقط انتخاب‌ها مهمن.", "scores": {"human": 2}},
-            {"text": "قدرت یعنی آزادی.", "scores": {"demon": 2}},
-            {"text": "همه‌چیز بهایی داره، حتی خوبی.", "scores": {"demon": 1, "human": 1}},
-            {"text": "عدالت بدون احساس، بی‌ارزشه.", "scores": {"angel": 1, "human": 1}},
+            {"text": "نور همیشه در تاریکی هم راهی پیدا می‌کنه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "هیچ چیز مطلق نیست؛ فقط انتخاب‌ها مهمن.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "قدرت یعنی آزادی.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "همه‌چیز بهایی داره، حتی خوبی.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "عدالت بدون احساس، بی‌ارزشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
-        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره، چه واکنشی نشون می‌دی؟",
+        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره، چه واک-نشی نشون می‌دی؟",
         "answers": [
-            {"text": "سعی می‌کنم دلیلش رو بفهمم.", "scores": {"angel": 2}},
-            {"text": "برام مهم نیست، هرکس نظر خودش رو داره.", "scores": {"human": 2}},
-            {"text": "ازش استفاده می‌کنم تا قوی‌تر شم.", "scores": {"demon": 2}},
-            {"text": "فقط لبخند می‌زنم — نفرتش خودش رو می‌سوزونه.", "scores": {"angel": 1, "demon": 1}},
-            {"text": "بهش نشون می‌دم که اشتباه کرده.", "scores": {"human": 1, "demon": 1}},
+            {"text": "سعی می‌کنم دلیلش رو بفهمم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "برام مهم نیست، هرکس نظر خودش رو داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "ازش استفاده می‌کنم تا قوی‌تر شم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "فقط لبخند می‌زنم — نفرتش خودش رو می‌سوزونه.", "scores": {"angel": 1, "human": 0, "demon": 1}}, # تصحیح امتیازدهی کاربر (angel+1, demon+1)
+            {"text": "بهش نشون می‌دم که اشتباه کرده.", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
     {
         "text": "🧩 سؤال ۷\n\nدر انتخاب بین «آرامش» و «قدرت»، کدوم رو ترجیح می‌دی؟",
         "answers": [
-            {"text": "آرامش، چون بدونش هیچ ارزشی نیست.", "scores": {"angel": 2}},
-            {"text": "قدرت، چون باهاش میشه از آرامش محافظت کرد.", "scores": {"human": 2}},
-            {"text": "هیچ‌کدوم مطلق نیست، باید بینش تعادل ساخت.", "scores": {"human": 1, "angel": 1}},
-            {"text": "قدرت، چون فقط قوی‌ها زنده می‌مونن.", "scores": {"demon": 2}},
-            {"text": "آرامش، اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "demon": 1}},
+            {"text": "آرامش، چون بدونش هیچ ارزشی نیست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "قدرت، چون باهاش میشه از آرامش محافظت کرد.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "هیچ‌کدوم مطلق نیست، باید بینش تعادل ساخت.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "قدرت، چون فقط قوی‌ها زنده می‌مونن.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "آرامش، اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "human": 0, "demon": 1}}, # تصحیح امتیازدهی کاربر (angel+1, demon+1)
         ],
     },
     {
         "text": "🧩 سؤال ۸\n\nوقتی همه علیه تو هستن، چطور ادامه می‌دی؟",
         "answers": [
-            {"text": "با ایمان به خودم پیش می‌رم.", "scores": {"angel": 2}},
-            {"text": "با منطق و صبر منتظر فرصت می‌مونم.", "scores": {"human": 2}},
-            {"text": "با هر وسیله‌ای که دارم مقابله می‌کنم.", "scores": {"demon": 2}},
-            {"text": "ساکت می‌مونم و اجازه می‌دم زمان قضاوت کنه.", "scores": {"angel": 1, "human": 1}},
-            {"text": "می‌خندم، چون این یعنی خطرناک شدم.", "scores": {"demon": 1, "human": 1}},
+            {"text": "با ایمان به خودم پیش می‌رم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "با منطق و صبر منتظر فرصت می‌مونم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "با هر وسیله‌ای که دارم مقابله می‌کنم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "ساکت می‌مونم و اجازه می‌دم زمان قضاوت کنه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "می‌خندم، چون این یعنی خطرناک شدم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
     {
         "text": "🧩 سؤال ۹\n\nکدوم حس بیشتر درونت غالب‌تره؟",
         "answers": [
-            {"text": "همدلی.", "scores": {"angel": 2}},
-            {"text": "کنجکاوی.", "scores": {"human": 2}},
-            {"text": "جاه‌طلبی.", "scores": {"demon": 2}},
-            {"text": "بی‌اعتمادی.", "scores": {"demon": 1, "human": 1}},
-            {"text": "نظم و کنترل.", "scores": {"human": 1, "angel": 1}},
+            {"text": "همدلی.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "کنجکاوی.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "جاه‌طلبی.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "بی‌اعتمادی.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "نظم و کنترل.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
         "text": "🧩 سؤال ۱۰\n\nوقتی باید بین نجات یک بی‌گناه و نجات هزار نفر تصمیم بگیری، چطور انتخاب می‌کنی؟",
         "answers": [
-            {"text": "بی‌گناه رو نجات می‌دم، چون ارزش یک روح بی‌اندازه‌ست.", "scores": {"angel": 2}},
-            {"text": "هزار نفر، چون منطق مهم‌تر از احساسه.", "scores": {"human": 2}},
-            {"text": "بستگی داره کدوم برام سود بیشتری داره.", "scores": {"demon": 2}},
-            {"text": "هیچ‌کدوم، چون هیچ انتخابی درست نیست.", "scores": {"human": 1, "demon": 1}},
-            {"text": "هر دو رو نجات می‌دم، حتی اگه ممکن نباشه.", "scores": {"angel": 1, "human": 1}},
+            {"text": "بی‌گناه رو نجات می‌دم، چون ارزش یک روح بی‌اندازه‌ست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "هزار نفر، چون منطق مهم‌تر از احساسه.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "بستگی داره کدوم برام سود بیشتری داره.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "هیچ‌کدوم، چون هیچ انتخابی درست نیست.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "هر دو رو نجات می‌دم، حتی اگه ممکن نباشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
 ]
+# --- ✨✨✨ پایان تغییر اول ✨✨✨
 
-# ⚠️ لینک گروه‌های خود را در اینجا قرار دهید
+
 GROUP_LINKS = {
     "angel": "https://t.me/+3znA_SaGOJo0Mzg8",
     "human": "https://t.me/+DIN_scA0cg5lNmM8",
@@ -136,7 +131,7 @@ GROUP_LINKS = {
 
 race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
 
-# --- توابع اصلی ربات (بدون تغییر زیاد) ---
+# --- توابع اصلی ربات ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if 'result_race' in context.user_data:
@@ -163,18 +158,25 @@ async def name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"خوش اومدی {user_name}!\nبریم سراغ سوال اول:")
     await send_question(update.message, context)
 
+# --- ✨ تابع build_question_keyboard (بدون تغییر نسبت به نسخه قبلی شما) ---
 def build_question_keyboard(question_index, user_answers):
+    """دکمه‌های گزینه‌ها را به صورت نامرتب و دکمه‌های ناوبری را می‌سازد."""
     keyboard = []
     question = QUESTIONS[question_index]
     
+    # جدید: گزینه‌ها را همراه با ایندکس اصلی‌شان ذخیره کرده و سپس بُر می‌زنیم
     indexed_answers = list(enumerate(question["answers"]))
     random.shuffle(indexed_answers)
     
+    # ساخت دکمه‌های گزینه‌ها بر اساس ترتیب جدید (نامرتب)
     for original_index, answer in indexed_answers:
+        # چک می‌کنیم آیا کاربر قبلا این گزینه را انتخاب کرده یا نه
         prefix = "✅ " if user_answers.get(question_index) == original_index else ""
+        # در callback_data از ایندکس اصلی استفاده می‌کنیم تا امتیازدهی درست انجام شود
         button = InlineKeyboardButton(f'{prefix}{answer["text"]}', callback_data=f"ans_{question_index}_{original_index}")
         keyboard.append([button])
         
+    # ساخت دکمه‌های ناوبری (بدون تغییر)
     nav_buttons = []
     if question_index > 0:
         nav_buttons.append(InlineKeyboardButton("⬅️ سوال قبلی", callback_data=f"nav_prev_{question_index}"))
@@ -221,16 +223,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def calculate_scores(user_answers):
     scores = {"angel": 0, "human": 0, "demon": 0}
     for q_idx, a_idx in user_answers.items():
-        selected_answer_scores = QUESTIONS[q_idx]["answers"][a_idx].get("scores", {})
+        selected_answer_scores = QUESTIONS[q_idx]["answers"][a_idx]["scores"]
         for race, score in selected_answer_scores.items():
-            if race in scores:
-                scores[race] += score
+            scores[race] += score
     return scores
 
+# --- ✨✨✨ تغییر دوم: تابع محاسبه نتیجه برای بازگرداندن شیطان ✨✨✨
 async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
     final_scores = calculate_scores(context.user_data['answers'])
     
-    # ✨ نژاد شیطان بازگردانده شد و به درستی محاسبه می‌شود
+    # --- ⚠️ بخش حذف شیطان از اینجا حذف شد ⚠️ ---
+
     races_sorted = sorted(final_scores.items(), key=lambda item: (-item[1], ['angel', 'human', 'demon'].index(item[0])))
     result_race = races_sorted[0][0]
     context.user_data['result_race'] = result_race
@@ -245,25 +248,25 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
     if ADMIN_IDS:
+        # --- گزارش ادمین تصحیح شد تا امتیاز واقعی شیطان را نشان دهد ---
         admin_report_text = (f"👤 گزارش تست جدید:\n\n"
                            f"نام بازیکن: {player_name}\n"
                            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
                            f"آیدی عددی: `{user.id}`\n\n"
-                           f"نتیجه تست: **{race_names[result_race]}**\n\n"
+                           f"نتیجه تست: **{race_names[result_race]}**\n\n" # کلمه (بدون شیطان) حذف شد
                            f"امتیازات:\n"
                            f"👼 فرشته: {final_scores['angel']}\n"
                            f"👤 انسان: {final_scores['human']}\n"
-                           f"😈 شیطان: {final_scores['demon']}")
-        
+                           f"😈 شیطان: {final_scores['demon']}") # نمایش امتیاز واقعی شیطان
         if 'all_results' not in context.bot_data:
             context.bot_data['all_results'] = []
         context.bot_data['all_results'].append(admin_report_text)
-        
         for admin_id in ADMIN_IDS:
             try:
                 await context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
             except Exception as e:
                 logger.error(f"ارسال پیام به ادمین {admin_id} با خطا مواجه شد: {e}")
+# --- ✨✨✨ پایان تغییر دوم ✨✨✨
 
 async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('state') == 'awaiting_name':
@@ -285,53 +288,14 @@ async def get_results_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     response_text = "📋 **آخرین نتایج ثبت شده:**\n\n" + "\n\n---\n\n".join(last_10_results)
     await update.message.reply_text(response_text, parse_mode='Markdown')
 
-# --- 🚀 بخش جدید: راه‌اندازی وب‌سرور Flask ---
-app = Flask(__name__)
-ptb_app = Application.builder().token(BOT_TOKEN).build()
-
-# افزودن تمام دستورات به ptb_app
-ptb_app.add_handler(CommandHandler("start", start_command))
-ptb_app.add_handler(CommandHandler("results", get_results_command))
-ptb_app.add_handler(CallbackQueryHandler(button_handler))
-ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
-
-@app.route(f"/{BOT_TOKEN}", methods=["POST"])
-async def webhook():
-    """این تابع پیام‌ها را از تلگرام دریافت کرده و به ربات می‌دهد."""
-    if request.is_json:
-        update_json = request.get_json()
-        update = Update.de_json(update_json, ptb_app.bot)
-        await ptb_app.process_update(update)
-    return "ok", 200
-
-@app.route("/")
-def index():
-    """یک صفحه ساده که نشان می‌دهد ربات در حال اجراست."""
-    return "Bot is running!", 200
-
-async def setup_webhook():
-    """این تابع هنگام شروع به کار، وب‌هوک را در تلگرام ثبت می‌کند."""
-    # این آدرس عمومی است که Railway به شما می‌دهد
-    public_url = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
-    if public_url:
-        webhook_url = f"https://{public_url}/{BOT_TOKEN}"
-        await ptb_app.bot.set_webhook(url=webhook_url)
-        logger.info(f"Webhook set to {webhook_url}")
-    else:
-        logger.warning("RAILWAY_PUBLIC_DOMAIN environment variable not set. Webhook not set.")
+def main():
+    application = Application.builder().token(BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("results", get_results_command))
+    application.add_handler(CallbackQueryHandler(button_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
+    print("ربات در حال اجراست...")
+    application.run_polling()
 
 if __name__ == "__main__":
-    # به جای run_polling()، ما سرور Flask را اجرا می‌کنیم
-    import asyncio
-    
-    # اول وب‌هوک را تنظیم می‌کنیم
-    try:
-        asyncio.run(setup_webhook())
-    except Exception as e:
-        logger.error(f"Error setting up webhook: {e}")
-
-    # سپس سرور وب را اجرا می‌کنیم
-    # Railway پورت را از طریق متغیر PORT مشخص می‌کند
-    port = int(os.environ.get("PORT", 8080))
-    # '0.0.0.0' مهم است تا Railway بتواند به آن دسترسی داشته باشد
-    app.run(host="0.0.0.0", port=port, debug=False)
+    main()
