@@ -6,10 +6,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- تنظیمات اولیه ---
-# ✨✨✨ توکن و آیدی‌های شما اینجا هستند ✨✨✨
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
 ADMIN_IDS = [5044871490, 5107444649]
-# ✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -323,8 +321,12 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not keyboard:
         await update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
         return
-
-    await update.message.reply_text(" पैनल ادمین: لطفاً کاربری را برای مشاهده نتیجه (جداگانه) انتخاب کنید:", reply_markup=keyboard)
+    
+    # --- ✨✨✨ متن اینجا اصلاح شد ✨✨✨
+    await update.message.reply_text("**بخش مدیریت ادمین:**\n\n"
+                                   "لطفاً کاربری را برای مشاهده نتیجه (جداگانه) انتخاب کنید:", 
+                                   reply_markup=keyboard,
+                                   parse_mode='Markdown')
 
 async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -349,7 +351,7 @@ async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         
         report_text = target_data.get('report_text', "گزارشی یافت نشد.")
         
-        keyboard = [[InlineKeyboardButton("➡️ بازگشت به لیست", callback_data="admin_back_list")]]
+        keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         try:
@@ -363,7 +365,12 @@ async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         if not keyboard:
             await query.edit_message_text("هنوز هیچ نتیجه‌ای ثبت نشده است.")
             return
-        await query.edit_message_text(" पैनल ادمین: لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", reply_markup=keyboard)
+        
+        # --- ✨✨✨ متن اینجا اصلاح شد ✨✨✨
+        await query.edit_message_text("**بخش مدیریت ادمین:**\n\n"
+                                      "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
+                                      reply_markup=keyboard,
+                                      parse_mode='Markdown')
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
@@ -374,7 +381,7 @@ def main():
     application.add_handler(CallbackQueryHandler(button_handler)) 
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
     
-    print("ربات (نسخه ادیت شده) در حال اجراست...")
+    print("ربات (نسخه اصلاح شده فارسی) در حال اجراست...")
     application.run_polling()
 
 if __name__ == "__main__":
