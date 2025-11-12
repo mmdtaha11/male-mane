@@ -15,8 +15,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- داده‌های سوالات و گروه‌ها ---
-
-# --- ✨✨✨ تغییر اول: بخش سوالات با محتوای جدید شما جایگزین شد ✨✨✨
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -74,7 +72,7 @@ QUESTIONS = [
             {"text": "سعی می‌کنم دلیلش رو بفهمم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
             {"text": "برام مهم نیست، هرکس نظر خودش رو داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "ازش استفاده می‌کنم تا قوی‌تر شم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "فقط لبخند می‌زنم — نفرتش خودش رو می‌سوزونه.", "scores": {"angel": 1, "human": 0, "demon": 1}}, # تصحیح امتیازدهی کاربر (angel+1, demon+1)
+            {"text": "فقط لبخند می‌زنم — نفرتش خودش رو می‌سوزونه.", "scores": {"angel": 1, "human": 0, "demon": 1}},
             {"text": "بهش نشون می‌دم که اشتباه کرده.", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
@@ -85,7 +83,7 @@ QUESTIONS = [
             {"text": "قدرت، چون باهاش میشه از آرامش محافظت کرد.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "هیچ‌کدوم مطلق نیست، باید بینش تعادل ساخت.", "scores": {"angel": 1, "human": 1, "demon": 0}},
             {"text": "قدرت، چون فقط قوی‌ها زنده می‌مونن.", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "آرامش، اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "human": 0, "demon": 1}}, # تصحیح امتیازدهی کاربر (angel+1, demon+1)
+            {"text": "آرامش، اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "human": 0, "demon": 1}},
         ],
     },
     {
@@ -119,12 +117,10 @@ QUESTIONS = [
         ],
     },
 ]
-# --- ✨✨✨ پایان تغییر اول ✨✨✨
-
 
 GROUP_LINKS = {
     "angel": "https://t.me/+3znA_SaGOJo0Mzg8",
-    "human": "https://t.me/+DIN_scA0cg5lNmM8",
+    "human": "https://t.me/+DIN_scA0cg5lNmM8", # این لینک همچنان باقی می‌ماند، شاید برای استفاده‌های دیگر
     "demon": "https://t.me/+iUrNvTrK1mxmYjRk",
     "main": "https://t.me/+OpZRxrzRTyQ5OTc8"
 }
@@ -134,18 +130,33 @@ race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "
 # --- توابع اصلی ربات ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    
+    # --- ✨ تغییر: بررسی نتیجه ذخیره شده بر اساس ساختار جدید ---
+    # نتایج قبلی که به صورت 'result_race' ذخیره شده‌اند همچنان کار می‌کنند
     if 'result_race' in context.user_data:
         player_name = context.user_data.get('player_name', 'شما')
         result_race = context.user_data['result_race']
-        result_text = (f"سلام {player_name}!\n"
+        
+        # اگر نتیجه کاربر 'انسان' بود (مربوط به قبل از آپدیت)، او را به گپ اصلی می‌فرستیم
+        if result_race == "human":
+             result_text = (f"سلام {player_name}!\n"
                        f"شما قبلاً در آزمون شرکت کرده‌اید.\n\n"
                        f"نتیجه شما: **{race_names[result_race]}**\n\n"
-                       f"می‌توانید از طریق دکمه‌های زیر وارد گروه‌ها شوید:")
-        keyboard = [[InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
-                    [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
+                       f"می‌توانید وارد گپ اصلی شوید:")
+             keyboard = [[InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
+        else:
+            result_text = (f"سلام {player_name}!\n"
+                           f"شما قبلاً در آزمون شرکت کرده‌اید.\n\n"
+                           f"نتیجه شما: **{race_names[result_race]}**\n\n"
+                           f"می‌توانید از طریق دکمه‌های زیر وارد گروه‌ها شوید:")
+            keyboard = [[InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
+                        [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
         return
+        
     context.user_data['state'] = 'awaiting_name'
     await update.message.reply_text("سلام! به رول پلی میستریس ورلد خوش اومدی.\nبرای شروع، لطفاً نام خودت رو وارد کن:")
 
@@ -158,25 +169,18 @@ async def name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"خوش اومدی {user_name}!\nبریم سراغ سوال اول:")
     await send_question(update.message, context)
 
-# --- ✨ تابع build_question_keyboard (بدون تغییر نسبت به نسخه قبلی شما) ---
 def build_question_keyboard(question_index, user_answers):
-    """دکمه‌های گزینه‌ها را به صورت نامرتب و دکمه‌های ناوبری را می‌سازد."""
     keyboard = []
     question = QUESTIONS[question_index]
     
-    # جدید: گزینه‌ها را همراه با ایندکس اصلی‌شان ذخیره کرده و سپس بُر می‌زنیم
     indexed_answers = list(enumerate(question["answers"]))
     random.shuffle(indexed_answers)
     
-    # ساخت دکمه‌های گزینه‌ها بر اساس ترتیب جدید (نامرتب)
     for original_index, answer in indexed_answers:
-        # چک می‌کنیم آیا کاربر قبلا این گزینه را انتخاب کرده یا نه
         prefix = "✅ " if user_answers.get(question_index) == original_index else ""
-        # در callback_data از ایندکس اصلی استفاده می‌کنیم تا امتیازدهی درست انجام شود
         button = InlineKeyboardButton(f'{prefix}{answer["text"]}', callback_data=f"ans_{question_index}_{original_index}")
         keyboard.append([button])
         
-    # ساخت دکمه‌های ناوبری (بدون تغییر)
     nav_buttons = []
     if question_index > 0:
         nav_buttons.append(InlineKeyboardButton("⬅️ سوال قبلی", callback_data=f"nav_prev_{question_index}"))
@@ -228,17 +232,28 @@ def calculate_scores(user_answers):
             scores[race] += score
     return scores
 
-# --- ✨✨✨ تغییر دوم: تابع محاسبه نتیجه برای بازگرداندن شیطان ✨✨✨
+# --- ✨✨✨ تغییر اساسی: تابع محاسبه نتیجه طبق خواسته شما (حذف انسان از نتیجه کاربر) ✨✨✨
 async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
     final_scores = calculate_scores(context.user_data['answers'])
-    
-    # --- ⚠️ بخش حذف شیطان از اینجا حذف شد ⚠️ ---
-
-    races_sorted = sorted(final_scores.items(), key=lambda item: (-item[1], ['angel', 'human', 'demon'].index(item[0])))
-    result_race = races_sorted[0][0]
-    context.user_data['result_race'] = result_race
     player_name = context.user_data.get('player_name', 'بازیکن')
     
+    # --- ⚠️ پیاده‌سازی خواسته ۱: نتیجه کاربر فقط بین فرشته و شیطان ---
+    # 1. یک دیکشنری جدید فقط با امتیازات فرشته و شیطان می‌سازیم
+    scores_for_user_result = {
+        "angel": final_scores["angel"],
+        "demon": final_scores["demon"]
+    }
+    
+    # 2. نتیجه کاربر را *فقط* بین این دو مشخص می‌کنیم
+    # (در صورت تساوی، 'angel' اولویت دارد چون در لیست اول آمده)
+    user_races_sorted = sorted(scores_for_user_result.items(), 
+                               key=lambda item: (-item[1], ['angel', 'demon'].index(item[0])))
+    result_race = user_races_sorted[0][0] # نتیجه یا 'angel' است یا 'demon'
+    # --- پایان تغییر خواسته ۱ ---
+
+    context.user_data['result_race'] = result_race
+    
+    # ارسال نتیجه به کاربر
     result_text_user = (f"خب {player_name}، آزمون تموم شد!\n\n"
                        f"نتیجه نهایی: **شما یک {race_names[result_race]} هستید!**\n\n"
                        f"بر اساس شخصیت شما، به گروه زیر دعوت می‌شوید:")
@@ -247,55 +262,7 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     reply_markup = InlineKeyboardMarkup(keyboard)
     await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
+    # --- ⚠️ پیاده‌سازی خواسته ۲ و ۳: ارسال گزارش کامل به ادمین و ذخیره‌سازی ---
     if ADMIN_IDS:
-        # --- گزارش ادمین تصحیح شد تا امتیاز واقعی شیطان را نشان دهد ---
-        admin_report_text = (f"👤 گزارش تست جدید:\n\n"
-                           f"نام بازیکن: {player_name}\n"
-                           f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
-                           f"آیدی عددی: `{user.id}`\n\n"
-                           f"نتیجه تست: **{race_names[result_race]}**\n\n" # کلمه (بدون شیطان) حذف شد
-                           f"امتیازات:\n"
-                           f"👼 فرشته: {final_scores['angel']}\n"
-                           f"👤 انسان: {final_scores['human']}\n"
-                           f"😈 شیطان: {final_scores['demon']}") # نمایش امتیاز واقعی شیطان
-        if 'all_results' not in context.bot_data:
-            context.bot_data['all_results'] = []
-        context.bot_data['all_results'].append(admin_report_text)
-        for admin_id in ADMIN_IDS:
-            try:
-                await context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
-            except Exception as e:
-                logger.error(f"ارسال پیام به ادمین {admin_id} با خطا مواجه شد: {e}")
-# --- ✨✨✨ پایان تغییر دوم ✨✨✨
-
-async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.user_data.get('state') == 'awaiting_name':
-        context.user_data['state'] = ''
-        await name_handler(update, context)
-    else:
-        await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
-
-async def get_results_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
-        await update.message.reply_text("❌ شما اجازه دسترسی به این دستور را ندارید.")
-        return
-    all_results = context.bot_data.get('all_results', [])
-    if not all_results:
-        await update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
-        return
-    last_10_results = all_results[-10:]
-    response_text = "📋 **آخرین نتایج ثبت شده:**\n\n" + "\n\n---\n\n".join(last_10_results)
-    await update.message.reply_text(response_text, parse_mode='Markdown')
-
-def main():
-    application = Application.builder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("results", get_results_command))
-    application.add_handler(CallbackQueryHandler(button_handler))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
-    print("ربات در حال اجراست...")
-    application.run_polling()
-
-if __name__ == "__main__":
-    main()
+        # ساخت گزارش متنی (با تمام جزئیات طبق خواسته ۲)
+        admin_
