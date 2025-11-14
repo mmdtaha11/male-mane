@@ -1,21 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-# اینها ایمپورت‌های نسخه ۲۰ هستند و درستند
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# --- تنظیمات اولیه ---
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
 ADMIN_IDS = [5044871490, 5107444649]
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# --- داده‌های سوالات و گروه‌ها (کد خودت - بدون تغییر) ---
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -128,8 +119,6 @@ GROUP_LINKS = {
 
 race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
 
-# --- توابع اصلی ربات (کد خودت - بدون تغییر) ---
-
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
@@ -197,7 +186,6 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
-        # این خط از کد تو کار می‌کرد، پس درسته
         await context.bot.edit_message_text(chat_id=message.chat_id, message_id=message.message_id, text=question["text"], reply_markup=keyboard)
     else:
         await message.reply_text(question["text"], reply_markup=keyboard)
@@ -210,7 +198,6 @@ def calculate_scores(user_answers):
             scores[race] += score
     return scores
 
-# --- ✨✨✨ تعمیر: ساخت گزارش ادمین به دو شکل (با مارک‌داون و ساده) ---
 async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
     final_scores = calculate_scores(context.user_data['answers'])
     player_name = context.user_data.get('player_name', 'بازیکن')
@@ -235,7 +222,6 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
     if ADMIN_IDS:
-        # --- ۱. نسخه مارک‌داون (برای ارسال فوری) ---
         admin_report_text_markdown = (f"👤 گزارش تست جدید:\n\n"
                            f"نام بازیکن: {player_name}\n"
                            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
@@ -246,12 +232,11 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
                            f"👤 انسان: {final_scores['human']}\n"
                            f"😈 شیطان: {final_scores['demon']}")
         
-        # --- ۲. نسخه متن ساده (برای پنل ادمین) ---
         admin_report_text_plain = (f"👤 گزارش تست جدید:\n\n"
                            f"نام بازیکن: {player_name}\n"
                            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
-                           f"آیدی عددی: {user.id}\n\n" # <-- حذف `
-                           f"نتیجه اعلام شده به کاربر: {race_names[result_race]} (بین 👼/😈)\n\n" # <-- حذف **
+                           f"آیدی عددی: {user.id}\n\n"
+                           f"نتیجه اعلام شده به کاربر: {race_names[result_race]} (بین 👼/😈)\n\n"
                            f"امتیازات کامل (برای بررسی ادمین):\n"
                            f"👼 فرشته: {final_scores['angel']}\n"
                            f"👤 انسان: {final_scores['human']}\n"
@@ -263,8 +248,8 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "username": user.username or 'ندارد',
             "result_race_user": result_race,
             "final_scores": final_scores,
-            "report_text_markdown": admin_report_text_markdown, # <-- ذخیره نسخه مارک‌داون
-            "report_text_plain": admin_report_text_plain       # <-- ذخیره نسخه ساده
+            "report_text_markdown": admin_report_text_markdown,
+            "report_text_plain": admin_report_text_plain
         }
 
         if 'structured_results' not in context.bot_data:
@@ -274,10 +259,9 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
 
         for admin_id in ADMIN_IDS:
             try:
-                # --- ارسال فوری با مارک‌داون (که می‌دانیم کار می‌کند) ---
                 await context.bot.send_message(chat_id=admin_id, text=admin_report_text_markdown, parse_mode='Markdown')
             except Exception as e:
-                logger.error(f"ارسال پیام به ادمین {admin_id} با خطا مواجه شد: {e}")
+                pass # لاگ حذف شد
 
 async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('state') == 'awaiting_name':
@@ -285,8 +269,6 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await name_handler(update, context)
     else:
         await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
-
-# --- بخش پنل ادمین (کد خودت - بدون تغییر) ---
 
 def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
@@ -318,14 +300,11 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
         return
     
-    # --- ✨ تعمیر: حذف parse_mode از اینجا ---
-    await update.message.reply_text("بخش مدیریت ادمین:\n\n" # متن دیگر بولد نیست
+    await update.message.reply_text("بخش مدیریت ادمین:\n\n"
                                    "لطفاً کاربری را برای مشاهده نتیجه (جداگانه) انتخاب کنید:", 
                                    reply_markup=keyboard
-                                   # parse_mode='Markdown' <-- حذف شد
                                    )
 
-# --- ✨✨✨ تابع دکمه‌ها (کد خودت + تعمیر نهایی) ✨✨✨
 async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
@@ -333,7 +312,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
     data = query.data.split('_')
     action_group = data[0] 
 
-    # --- بخش آزمون (کد خودت - بدون تغییر) ---
     if action_group == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
@@ -352,7 +330,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
     elif action_group == "finish":
         await calculate_and_send_result(query.message, context, update.effective_user)
         
-    # --- بخش ادمین (تعمیر شده با خواندن متن ساده) ---
     elif action_group == "admin":
         user_id = query.effective_user.id
         if user_id not in ADMIN_IDS:
@@ -375,20 +352,42 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                     )
                     return
                 
-                # --- ✨ تعمیر اصلی: خواندن نسخه متن ساده ---
-                report_text = target_data.get('report_text_plain', "گزارشی یافت نشد.") # <-- از _plain استفاده می‌کنیم
-                
+                report_text = target_data.get('report_text_plain', "گزارشی یافت نشد.")
                 keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # --- ✨ تعمیر: استفاده از context.bot و حذف parse_mode ---
                 await context.bot.edit_message_text(
                     chat_id=query.message.chat_id,
                     message_id=query.message.message_id,
                     text=report_text, 
-                    reply_markup=reply_markup 
-                    # parse_mode='Markdown'  <--- عامل کرش حذف شد
+                    reply_markup=reply_markup
                 )
             
             except Exception as e:
-                # --- ✨ این خ
+                try:
+                    await query.message.reply_text(text="خطا در نمایش گزارش.", reply_markup=reply_markup)
+                except:
+                    pass 
+
+        elif action_type == "back": 
+            keyboard = get_admin_panel_keyboard(context)
+            if not keyboard:
+                await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
+                return
+            
+            await context.bot.edit_message_text(
+                chat_id=query.message.chat_id,
+                message_id=query.message.message_id,
+                text="بخش مدیریت ادمین:\n\n"
+                     "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
+                reply_markup=keyboard
+            )
+
+application = Application.builder().token(BOT_TOKEN).build()
+
+application.add_handler(CommandHandler("start", start_command))
+application.add_handler(CommandHandler("admin", admin_panel_command))
+application.add_handler(CallbackQueryHandler(global_button_handler))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
+
+application.run_polling()
