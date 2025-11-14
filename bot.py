@@ -3,7 +3,7 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-# اینها ایمپورت‌های نسخه ۲۰+ هستند و درستند
+# اینها ایمپورت‌های نسخه ۲۰ هستند و درستند
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- تنظیمات اولیه ---
@@ -387,8 +387,8 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                     message_id=query.message.message_id,
                     text=report_text, 
                     reply_markup=reply_markup 
-                    # parse_mode='Markdown'  <--- حذف شد
+                    # parse_mode='Markdown'  <--- عامل کرش حذف شد
                 )
             
             except Exception as e:
-                logger.warning(f"Fail
+                # --- ✨ این خ
