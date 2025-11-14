@@ -3,7 +3,8 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+# --- ✨ تغییر ۱: وارد کردن Updater و حذف Application/ContextTypes ---
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters, CallbackContext
 
 # --- تنظیمات اولیه ---
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
@@ -14,7 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- داده‌های سوالات و گروه‌ها (کد خودت - بدون تغییر) ---
+# --- داده‌های سوالات و گروه‌ها (بدون تغییر) ---
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -121,17 +122,19 @@ QUESTIONS = [
 GROUP_LINKS = {
     "angel": "https://t.me/+3znA_SaGOJo0Mzg8",
     "human": "https://t.me/+DIN_scA0cg5lNmM8",
-    "demon": "https://t.me/+iUrNvTrmYjRk",
+    "demon": "https://t.me/+iUrNvTrK1mxmYjRk",
     "main": "https://t.me/+OpZRxrzRTyQ5OTc8"
 }
 
 race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
 
-# --- توابع اصلی ربات (کد خودت - بدون تغییر) ---
+# --- توابع اصلی ربات (بدون async/await) ---
 
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- ✨ تغییر ۲: حذف async و ContextTypes ---
+def start_command(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     
+    # استفاده از context.user_data (در v13 به خوبی کار می‌کند)
     if 'result_race' in context.user_data:
         player_name = context.user_data.get('player_name', 'شما')
         result_race = context.user_data['result_race']
@@ -151,33 +154,31 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
         
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
+        update.message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
         return
         
     context.user_data['state'] = 'awaiting_name'
-    await update.message.reply_text("سلام! به رول پلی میستریس ورلد خوش اومدی.\nبرای شروع، لطفاً نام خودت رو وارد کن:")
+    update.message.reply_text("سلام! به رول پلی میستریس ورلد خوش اومدی.\nبرای شروع، لطفاً نام خودت رو وارد کن:")
 
-async def name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def name_handler(update: Update, context: CallbackContext):
     user_name = update.message.text
     context.user_data['player_name'] = user_name
     context.user_data['current_question'] = 0
     context.user_data['answers'] = {} 
     context.user_data['scores'] = {"angel": 0, "human": 0, "demon": 0}
-    await update.message.reply_text(f"خوش اومدی {user_name}!\nبریم سراغ سوال اول:")
-    await send_question(update.message, context)
+    update.message.reply_text(f"خوش اومدی {user_name}!\nبریم سراغ سوال اول:")
+    send_question(update.message, context)
 
 def build_question_keyboard(question_index, user_answers):
+    # (این تابع بدون تغییر بود، چون منطق پایتون خالص است)
     keyboard = []
     question = QUESTIONS[question_index]
-    
     indexed_answers = list(enumerate(question["answers"]))
     random.shuffle(indexed_answers)
-    
     for original_index, answer in indexed_answers:
         prefix = "✅ " if user_answers.get(question_index) == original_index else ""
         button = InlineKeyboardButton(f'{prefix}{answer["text"]}', callback_data=f"ans_{question_index}_{original_index}")
         keyboard.append([button])
-        
     nav_buttons = []
     if question_index > 0:
         nav_buttons.append(InlineKeyboardButton("⬅️ سوال قبلی", callback_data=f"nav_prev_{question_index}"))
@@ -187,21 +188,21 @@ def build_question_keyboard(question_index, user_answers):
     else:
         if question_index in user_answers:
             nav_buttons.append(InlineKeyboardButton("🏆 مشاهده نتیجه", callback_data="finish_quiz"))
-
     keyboard.append(nav_buttons)
     return InlineKeyboardMarkup(keyboard)
 
-async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=None):
+def send_question(message, context: CallbackContext, message_id=None):
     question_index = context.user_data['current_question']
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
-        # این خط از کد تو کار می‌کرد، پس درسته
-        await context.bot.edit_message_text(chat_id=message.chat_id, message_id=message_id, text=question["text"], reply_markup=keyboard)
+        # --- ✨ تغییر ۳: استفاده از context.bot (در v13 هم بود) ---
+        context.bot.edit_message_text(chat_id=message.chat_id, message_id=message_id, text=question["text"], reply_markup=keyboard)
     else:
-        await message.reply_text(question["text"], reply_markup=keyboard)
+        message.reply_text(question["text"], reply_markup=keyboard)
 
 def calculate_scores(user_answers):
+    # (این تابع بدون تغییر بود، چون منطق پایتون خالص است)
     scores = {"angel": 0, "human": 0, "demon": 0}
     for q_idx, a_idx in user_answers.items():
         selected_answer_scores = QUESTIONS[q_idx]["answers"][a_idx]["scores"]
@@ -209,7 +210,7 @@ def calculate_scores(user_answers):
             scores[race] += score
     return scores
 
-async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
+def calculate_and_send_result(message, context: CallbackContext, user):
     final_scores = calculate_scores(context.user_data['answers'])
     player_name = context.user_data.get('player_name', 'بازیکن')
     
@@ -230,7 +231,7 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     keyboard = [[InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
                 [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
+    message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
     if ADMIN_IDS:
         admin_report_text = (f"👤 گزارش تست جدید:\n\n"
@@ -252,6 +253,7 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "report_text": admin_report_text
         }
 
+        # در v13 از context.bot_data استفاده می‌کنیم (اما موقت است)
         if 'structured_results' not in context.bot_data:
             context.bot_data['structured_results'] = {}
         
@@ -259,20 +261,20 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
 
         for admin_id in ADMIN_IDS:
             try:
-                await context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
+                context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
             except Exception as e:
                 logger.error(f"ارسال پیام به ادمین {admin_id} با خطا مواجه شد: {e}")
 
-async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def message_router(update: Update, context: CallbackContext):
     if context.user_data.get('state') == 'awaiting_name':
         context.user_data['state'] = ''
-        await name_handler(update, context)
+        name_handler(update, context)
     else:
-        await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
+        update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
 
-# --- بخش پنل ادمین (کد خودت - بدون تغییر) ---
+# --- بخش پنل ادمین (v13) ---
 
-def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
+def get_admin_panel_keyboard(context: CallbackContext):
     keyboard = []
     all_results_data = context.bot_data.get('structured_results', {})
     if not all_results_data:
@@ -290,37 +292,38 @@ def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     
     return InlineKeyboardMarkup(keyboard)
 
-async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def admin_panel_command(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
-        await update.message.reply_text("❌ شما اجازه دسترسی به این دستور را ندارید.")
+        update.message.reply_text("❌ شما اجازه دسترسی به این دستور را ندارید.")
         return
 
     keyboard = get_admin_panel_keyboard(context)
     
     if not keyboard:
-        await update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
+        update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
         return
     
-    await update.message.reply_text("**بخش مدیریت ادمین:**\n\n"
-                                   "لطفاً کاربری را برای مشاهده نتیجه (جداگانه) انتخاب کنید:", 
-                                   reply_markup=keyboard,
-                                   parse_mode='Markdown')
+    # --- ✨ تغییر ۴: حذف parse_mode برای جلوگیری از کرش ---
+    update.message.reply_text("بخش مدیریت ادمین:\n\n"
+                               "لطفاً کاربری را برای مشاهده نتیجه (جداگانه) انتخاب کنید:", 
+                               reply_markup=keyboard
+                               # parse_mode='Markdown' <-- حذف شد
+                               )
 
-# --- ✨✨✨ تابع دکمه‌ها (کد خودت + تعمیر نهایی) ✨✨✨
-async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- تابع دکمه‌ها (v13) ---
+def global_button_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    await query.answer() 
+    query.answer() 
     
     data = query.data.split('_')
     action_group = data[0] 
 
-    # --- بخش آزمون (کد خودت - بدون تغییر) ---
     if action_group == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
         context.user_data['answers'][question_index] = answer_index
-        await send_question(query.message, context, message_id=query.message.message_id)
+        send_question(query.message, context, message_id=query.message.message_id)
         
     elif action_group == "nav":
         direction = data[1]
@@ -329,73 +332,79 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
             context.user_data['current_question'] = current_index + 1
         elif direction == "prev":
             context.user_data['current_question'] = current_index - 1
-        await send_question(query.message, context, message_id=query.message.message_id)
+        send_question(query.message, context, message_id=query.message.message_id)
         
     elif action_group == "finish":
-        await calculate_and_send_result(query.message, context, update.effective_user)
+        calculate_and_send_result(query.message, context, update.effective_user)
         
-    # --- بخش ادمین (تعمیر شده با حذف parse_mode) ---
     elif action_group == "admin":
         user_id = query.effective_user.id
         if user_id not in ADMIN_IDS:
-            await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
+            query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
             return
 
         action_type = data[1] 
         
         if action_type == "show":
-            try:
-                target_user_id = int(data[2])
-                all_results_data = context.bot_data.get('structured_results', {})
-                target_data = all_results_data.get(target_user_id)
-                
-                if not target_data:
-                    await context.bot.edit_message_text(
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id,
-                        text="خطا: اطلاعات این کاربر یافت نشد."
-                    )
-                    return
-                
-                # گزارش را بدون مارک‌داون می‌خوانیم که متن بولد نداشته باشد
-                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                # --- ✨ تعمیر اصلی: استفاده از context.bot و حذف parse_mode ---
-                await context.bot.edit_message_text(
-                    chat_id=query.message.chat_id,
-                    message_id=query.message.message_id,
-                    text=report_text, 
-                    reply_markup=reply_markup 
-                    # parse_mode='Markdown'  <--- عامل کرش حذف شد
-                )
+            target_user_id = int(data[2])
+            all_results_data = context.bot_data.get('structured_results', {})
+            target_data = all_results_data.get(target_user_id)
             
+            if not target_data:
+                # --- ✨ تغییر ۵: استفاده از query.edit_message_text (روش قدیمی) ---
+                query.edit_message_text(text="خطا: اطلاعات این کاربر یافت نشد.")
+                return
+            
+            report_text = target_data.get('report_text', "گزارشی یافت نشد.")
+            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            try:
+                # --- ✨ تغییر ۶: استفاده از query.edit_message_text و حذف parse_mode ---
+                query.edit_message_text(
+                    text=report_text, 
+                    reply_markup=reply_markup
+                    # parse_mode='Markdown' <-- حذف شد
+                )
             except Exception as e:
                 logger.warning(f"Failed to edit message for admin panel: {e}")
-                # اگر ویرایش ممکن نبود, پیام جدید می‌فرستد
-                # اینجا هم parse_mode را حذف می‌کنیم تا کرش نکند
-                await query.message.reply_text(text=report_text, reply_markup=reply_markup)
+                query.message.reply_text(text=report_text, reply_markup=reply_markup)
 
         elif action_type == "back": 
             keyboard = get_admin_panel_keyboard(context)
             if not keyboard:
-                await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
+                query.edit_message_text(text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
                 return
             
-            # --- ✨ تعمیر اصلی: استفاده از context.bot و حذف parse_mode ---
-            await context.bot.edit_message_text(
-                chat_id=query.message.chat_id,
-                message_id=query.message.message_id,
-                text="بخش مدیریت ادمین:\n\n" # متن را از حالت بولد خارج کردیم
+            # --- ✨ تغییر ۷: استفاده از query.edit_message_text و حذف parse_mode ---
+            query.edit_message_text(
+                text="بخش مدیریت ادمین:\n\n"
                      "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
                 reply_markup=keyboard
-                # parse_mode='Markdown'  <--- عامل کرش حذف شد
+                # parse_mode='Markdown' <-- حذف شد
             )
-# --- ✨✨✨ پایان تعمیرات ---
 
-
+# --- ✨ تغییر ۸: بازنویسی main با Updater (روش v13) ---
 def main():
-    application = Application.builder().token(BOT_TOKEN).build()
+    # از Updater به جای Application.builder استفاده می‌کنیم
+    updater = Updater(BOT_TOKEN, use_context=True)
     
-    application.add_handler(CommandHandler("start", star
+    # dispatcher را برای ثبت هندلرها می‌گیریم
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start_command))
+    dp.add_handler(CommandHandler("admin", admin_panel_command))
+    
+    # یک هندلر جامع برای همه دکمه‌ها
+    dp.add_handler(CallbackQueryHandler(global_button_handler))
+    
+    dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
+    
+    print("ربات (نسخه کتابخانه قدیمی v13) در حال اجراست...")
+    
+    # ربات را اجرا می‌کنیم
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
