@@ -3,6 +3,7 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+# اینها ایمپورت‌های نسخه ۲۰+ هستند و درستند
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- تنظیمات اولیه ---
@@ -197,7 +198,7 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
         # این خط از کد تو کار می‌کرد، پس درسته
-        await context.bot.edit_message_text(chat_id=message.chat_id, message_id=message_id, text=question["text"], reply_markup=keyboard)
+        await context.bot.edit_message_text(chat_id=message.chat_id, message_id=message.message_id, text=question["text"], reply_markup=keyboard)
     else:
         await message.reply_text(question["text"], reply_markup=keyboard)
 
@@ -390,5 +391,4 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 )
             
             except Exception as e:
-                logger.warning(f"Failed to edit message for admin panel: {e}")
-          
+                logger.warning(f"Fail
