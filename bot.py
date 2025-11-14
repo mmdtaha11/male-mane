@@ -203,7 +203,6 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
-        # --- ✨ تغییر ۱ (اینجا هم اعمال شد تا مطمئن شویم) ---
         await context.bot.edit_message_text(
             chat_id=message.chat_id, 
             message_id=message_id, 
@@ -317,7 +316,7 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- ✨✨✨ تابع جامع دکمه‌ها (با راه‌حل نهایی) ✨✨✨
+# --- تابع جامع دکمه‌ها (با راه‌حل نهایی) ---
 async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
@@ -360,7 +359,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 target_data = all_results_data.get(target_user_id)
                 
                 if not target_data:
-                    # --- ✨ استفاده از context.bot.edit_message_text ---
                     await context.bot.edit_message_text(
                         chat_id=query.message.chat_id,
                         message_id=query.message.message_id,
@@ -372,7 +370,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # --- ✨ استفاده از context.bot.edit_message_text ---
                 await context.bot.edit_message_text(
                     chat_id=query.message.chat_id,
                     message_id=query.message.message_id,
@@ -391,7 +388,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
                 try:
-                    # --- ✨ استفاده از context.bot.edit_message_text ---
                     await context.bot.edit_message_text(
                         chat_id=query.message.chat_id,
                         message_id=query.message.message_id,
@@ -406,4 +402,9 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         elif action_type == "back":
             keyboard = get_admin_panel_keyboard(context)
             if not keyboard:
-                await c
+                await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
+                return
+            
+            await context.bot.edit_message_text(
+                chat_id=query.message.chat_id,
+            
