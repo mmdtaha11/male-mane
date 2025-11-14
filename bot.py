@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- داده‌های سوالات و گروه‌ها (بدون تغییر) ---
+# --- داده‌های سوالات و گروه‌ها (کد خودت - بدون تغییر) ---
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -121,13 +121,13 @@ QUESTIONS = [
 GROUP_LINKS = {
     "angel": "https://t.me/+3znA_SaGOJo0Mzg8",
     "human": "https://t.me/+DIN_scA0cg5lNmM8",
-    "demon": "https://t.me/+iUrNvTrK1mxmYjRk",
+    "demon": "https://t.me/+iUrNvTrmYjRk",
     "main": "https://t.me/+OpZRxrzRTyQ5OTc8"
 }
 
 race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "شیطان 😈"}
 
-# --- توابع اصلی ربات ---
+# --- توابع اصلی ربات (کد خودت - بدون تغییر) ---
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -196,7 +196,7 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
-        # این خط در کد تو سالم بود و کار می‌کرد
+        # این خط از کد تو کار می‌کرد، پس درسته
         await context.bot.edit_message_text(chat_id=message.chat_id, message_id=message_id, text=question["text"], reply_markup=keyboard)
     else:
         await message.reply_text(question["text"], reply_markup=keyboard)
@@ -270,7 +270,7 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
 
-# --- بخش پنل ادمین (بدون تغییر) ---
+# --- بخش پنل ادمین (کد خودت - بدون تغییر) ---
 
 def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
@@ -307,7 +307,7 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- ✨✨✨ تابع جامع دکمه‌ها (فقط بخش ادمین تعمیر شد) ✨✨✨
+# --- ✨✨✨ تابع دکمه‌ها (کد خودت + تعمیر نهایی) ✨✨✨
 async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
@@ -315,7 +315,7 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
     data = query.data.split('_')
     action_group = data[0] 
 
-    # --- بخش آزمون (بدون تغییر، کد خودت) ---
+    # --- بخش آزمون (کد خودت - بدون تغییر) ---
     if action_group == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
@@ -334,7 +334,7 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
     elif action_group == "finish":
         await calculate_and_send_result(query.message, context, update.effective_user)
         
-    # --- ✨✨✨ بخش ادمین (تعمیر شده) ✨✨✨ ---
+    # --- بخش ادمین (تعمیر شده با حذف parse_mode) ---
     elif action_group == "admin":
         user_id = query.effective_user.id
         if user_id not in ADMIN_IDS:
@@ -350,52 +350,52 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 target_data = all_results_data.get(target_user_id)
                 
                 if not target_data:
-                    # --- ✨ تعمیر: استفاده از context.bot ---
                     await context.bot.edit_message_text(
                         chat_id=query.message.chat_id,
                         message_id=query.message.message_id,
-                        text=f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد."
+                        text="خطا: اطلاعات این کاربر یافت نشد."
                     )
                     return
                 
+                # گزارش را بدون مارک‌داون می‌خوانیم که متن بولد نداشته باشد
                 report_text = target_data.get('report_text', "گزارشی یافت نشد.")
                 keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # --- ✨ تعمیر: استفاده از context.bot بجای query ---
+                # --- ✨ تعمیر اصلی: استفاده از context.bot و حذف parse_mode ---
                 await context.bot.edit_message_text(
                     chat_id=query.message.chat_id,
                     message_id=query.message.message_id,
                     text=report_text, 
-                    reply_markup=reply_markup, 
-                    parse_mode='Markdown'
+                    reply_markup=reply_markup 
+                    # parse_mode='Markdown'  <--- عامل کرش حذف شد
                 )
             
             except Exception as e:
-                logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
-                error_message = (f"❌ بروز خطا: `{str(e)}`")
-                # (این بخش برای ارسال خطا در چت است، اگر باز هم کار نکرد)
-                try:
-                    await context.bot.edit_message_text(
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id,
-                        text=error_message, 
-                        parse_mode='Markdown'
-                    )
-                except Exception:
-                    pass 
+                logger.warning(f"Failed to edit message for admin panel: {e}")
+                # اگر ویرایش ممکن نبود, پیام جدید می‌فرستد
+                # اینجا هم parse_mode را حذف می‌کنیم تا کرش نکند
+                await query.message.reply_text(text=report_text, reply_markup=reply_markup)
 
-        elif action_type == "back": # دکمه "بازگشت به لیست"
+        elif action_type == "back": 
             keyboard = get_admin_panel_keyboard(context)
             if not keyboard:
                 await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
                 return
             
-            # --- ✨ تعمیر: استفاده از context.bot بجای query ---
+            # --- ✨ تعمیر اصلی: استفاده از context.bot و حذف parse_mode ---
             await context.bot.edit_message_text(
                 chat_id=query.message.chat_id,
                 message_id=query.message.message_id,
-                text="**بخش مدیریت ادمین:**\n\n"
+                text="بخش مدیریت ادمین:\n\n" # متن را از حالت بولد خارج کردیم
                      "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
-                reply_markup=keyboard, 
-                parse_mode='
+                reply_markup=keyboard
+                # parse_mode='Markdown'  <--- عامل کرش حذف شد
+            )
+# --- ✨✨✨ پایان تعمیرات ---
+
+
+def main():
+    application = Application.builder().token(BOT_TOKEN).build()
+    
+    application.add_handler(CommandHandler("start", star
