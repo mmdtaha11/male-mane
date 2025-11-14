@@ -13,7 +13,6 @@ from telegram.ext import (
 )
 
 # --- تنظیمات اولیه ---
-# !!! مطمئن شو که این توکن درست و معتبر است !!!
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
 ADMIN_IDS = [5044871490, 5107444649]
 
@@ -25,22 +24,22 @@ logger = logging.getLogger(__name__)
 # --- داده‌های سوالات و گروه‌ها (بدون تغییر) ---
 QUESTIONS = [
     {
-        "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
+        "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد, معمولاً چی‌کار می‌کنی؟",
         "answers": [
             {"text": "سعی می‌کنم هر دو طرف رو آروم کنم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "اول گوش می‌دم، بعد تصمیم می‌گیرم کدوم حق داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
-            {"text": "نمی‌خوام درگیر شم، ولی یادم می‌مونه کی باعث دردسر شد.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "اول گوش می‌دم, بعد تصمیم می‌گیرم کدوم حق داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "نمی‌خوام درگیر شم, ولی یادم می‌مونه کی باعث دردسر شد.", "scores": {"angel": 0, "human": 0, "demon": 2}},
             {"text": "سعی می‌کنم کنترل موقعیت رو بگیرم تا دعوا تموم شه.", "scores": {"angel": 0, "human": 1, "demon": 1}},
             {"text": "کاری می‌کنم هر دو بفهمن که بی‌فایده بود بحث کنن.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
-        "text": "🧩 سؤال ۲\n\nوقتی اشتباه بزرگی می‌کنی، اولین فکرت چیه؟",
+        "text": "🧩 سؤال ۲\n\nوقتی اشتباه بزرگی می‌کنی, اولین فکرت چیه؟",
         "answers": [
-            {"text": "باید جبرانش کنم، حتی اگه سخته.", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "همه اشتباه می‌کنن، مهم اینه یاد بگیرم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "باید جبرانش کنم, حتی اگه سخته.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "همه اشتباه می‌کنن, مهم اینه یاد بگیرم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "نباید بذارم کسی بفهمه.", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "دنیا ناعادله، ولی باید قوی‌تر شم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "دنیا ناعادله, ولی باید قوی‌تر شم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
             {"text": "شاید این اشتباه دلیل خاصی داشته.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
@@ -55,13 +54,13 @@ QUESTIONS = [
         ],
     },
     {
-        "text": "🧩 سؤال ۴\n\nوقتی یه نفر ناامید و خسته‌ست، چطور رفتار می‌کنی؟",
+        "text": "🧩 سؤال ۴\n\nوقتی یه نفر ناامید و خسته‌ست, چطور رفتار می‌کنی؟",
         "answers": [
             {"text": "باهاش حرف می‌زنم تا حس بهتری پیدا کنه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
             {"text": "بهش یادآوری می‌کنم که خودش باید قوی بمونه.", "scores": {"angel": 0, "human": 2, "demon": 0}},
-            {"text": "اگه خودش خواست، کمکش می‌کنم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "اگه خودش خواست, کمکش می‌کنم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
             {"text": "سکوت می‌کنم؛ بعضی چیزا نیاز به حرف ندارن.", "scores": {"angel": 0, "human": 1, "demon": 1}},
-            {"text": "می‌ذارم خودش تا ته سقوط بره، چون فقط اونطوری رشد می‌کنه.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "می‌ذارم خودش تا ته سقوط بره, چون فقط اونطوری رشد می‌کنه.", "scores": {"angel": 0, "human": 0, "demon": 2}},
         ],
     },
     {
@@ -70,38 +69,38 @@ QUESTIONS = [
             {"text": "نور همیشه در تاریکی هم راهی پیدا می‌کنه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
             {"text": "هیچ چیز مطلق نیست؛ فقط انتخاب‌ها مهمن.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "قدرت یعنی آزادی.", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "همه‌چیز بهایی داره، حتی خوبی.", "scores": {"angel": 0, "human": 1, "demon": 1}},
-            {"text": "عدالت بدون احساس، بی‌ارزشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "همه‌چیز بهایی داره, حتی خوبی.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "عدالت بدون احساس, بی‌ارزشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
     {
-        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره، چه واک-نشی نشون می‌دی؟",
+        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره, چه واک-نشی نشون می‌دی؟",
         "answers": [
             {"text": "سعی می‌کنم دلیلش رو بفهمم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "برام مهم نیست، هرکس نظر خودش رو داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "برام مهم نیست, هرکس نظر خودش رو داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "ازش استفاده می‌کنم تا قوی‌تر شم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
             {"text": "فقط لبخند می‌زنم — نفرتش خودش رو می‌سوزونه.", "scores": {"angel": 1, "human": 0, "demon": 1}},
             {"text": "بهش نشون می‌دم که اشتباه کرده.", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
     {
-        "text": "🧩 سؤال ۷\n\nدر انتخاب بین «آرامش» و «قدرت»، کدوم رو ترجیح می‌دی؟",
+        "text": "🧩 سؤال ۷\n\nدر انتخاب بین «آرامش» و «قدرت», کدوم رو ترجیح می‌دی؟",
         "answers": [
-            {"text": "آرامش، چون بدونش هیچ ارزشی نیست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "قدرت، چون باهاش میشه از آرامش محافظت کرد.", "scores": {"angel": 0, "human": 2, "demon": 0}},
-            {"text": "هیچ‌کدوم مطلق نیست، باید بینش تعادل ساخت.", "scores": {"angel": 1, "human": 1, "demon": 0}},
-            {"text": "قدرت، چون فقط قوی‌ها زنده می‌مونن.", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "آرامش، اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "human": 0, "demon": 1}},
+            {"text": "آرامش, چون بدونش هیچ ارزشی نیست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "قدرت, چون باهاش میشه از آرامش محافظت کرد.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "هیچ‌کدوم مطلق نیست, باید بینش تعادل ساخت.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "قدرت, چون فقط قوی‌ها زنده می‌مونن.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "آرامش, اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "human": 0, "demon": 1}},
         ],
     },
     {
-        "text": "🧩 سؤال ۸\n\nوقتی همه علیه تو هستن، چطور ادامه می‌دی؟",
+        "text": "🧩 سؤال ۸\n\nوقتی همه علیه تو هستن, چطور ادامه می‌دی؟",
         "answers": [
             {"text": "با ایمان به خودم پیش می‌رم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
             {"text": "با منطق و صبر منتظر فرصت می‌مونم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "با هر وسیله‌ای که دارم مقابله می‌کنم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
             {"text": "ساکت می‌مونم و اجازه می‌دم زمان قضاوت کنه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
-            {"text": "می‌خندم، چون این یعنی خطرناک شدم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "می‌خندم, چون این یعنی خطرناک شدم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
         ],
     },
     {
@@ -115,13 +114,13 @@ QUESTIONS = [
         ],
     },
     {
-        "text": "🧩 سؤال ۱۰\n\nوقتی باید بین نجات یک بی‌گناه و نجات هزار نفر تصمیم بگیری، چطور انتخاب می‌کنی؟",
+        "text": "🧩 سؤال ۱۰\n\nوقتی باید بین نجات یک بی‌گناه و نجات هزار نفر تصمیم بگیری, چطور انتخاب می‌کنی؟",
         "answers": [
-            {"text": "بی‌گناه رو نجات می‌دم، چون ارزش یک روح بی‌اندازه‌ست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
-            {"text": "هزار نفر، چون منطق مهم‌تر از احساسه.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "بی‌گناه رو نجات می‌دم, چون ارزش یک روح بی‌اندازه‌ست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "هزار نفر, چون منطق مهم‌تر از احساسه.", "scores": {"angel": 0, "human": 2, "demon": 0}},
             {"text": "بستگی داره کدوم برام سود بیشتری داره.", "scores": {"angel": 0, "human": 0, "demon": 2}},
-            {"text": "هیچ‌کدوم، چون هیچ انتخابی درست نیست.", "scores": {"angel": 0, "human": 1, "demon": 1}},
-            {"text": "هر دو رو نجات می‌دم، حتی اگه ممکن نباشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "هیچ‌کدوم, چون هیچ انتخابی درست نیست.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "هر دو رو نجات می‌دم, حتی اگه ممکن نباشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
 ]
@@ -140,8 +139,6 @@ race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    # context.bot_data را چک نمی‌کنیم، چون در هاست ابری هر بار پاک می‌شود
-    # در عوض، از context.user_data استفاده می‌کنیم که موقتاً برای کاربر ذخیره می‌شود
     if 'result_race' in context.user_data:
         player_name = context.user_data.get('player_name', 'شما')
         result_race = context.user_data['result_race']
@@ -206,13 +203,16 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
-        # استفاده از context.bot.edit_message_text برای اطمینان
-        await context.bot.edit_message_text(
-            chat_id=message.chat_id, 
-            message_id=message_id, 
-            text=question["text"], 
-            reply_markup=keyboard
-        )
+        # --- ✨ تعمیر ۱: استفاده از context.bot برای پایداری ---
+        try:
+            await context.bot.edit_message_text(
+                chat_id=message.chat_id, 
+                message_id=message_id, 
+                text=question["text"], 
+                reply_markup=keyboard
+            )
+        except Exception as e:
+            logger.warning(f"Error editing message in send_question: {e}")
     else:
         await message.reply_text(question["text"], reply_markup=keyboard)
 
@@ -237,12 +237,11 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
                                key=lambda item: (-item[1], ['angel', 'demon'].index(item[0])))
     result_race = user_races_sorted[0][0]
 
-    # نتیجه را در حافظه موقت خود کاربر ذخیره می‌کنیم
     context.user_data['result_race'] = result_race
     
-    result_text_user = (f"خب {player_name}، آزمون تموم شد!\n\n"
+    result_text_user = (f"خب {player_name}, آزمون تموم شد!\n\n"
                        f"نتیجه نهایی: **شما یک {race_names[result_race]} هستید!**\n\n"
-                       f"بر اساس شخصیت شما، به گروه زیر دعوت می‌شوید:")
+                       f"بر اساس شخصیت شما, به گروه زیر دعوت می‌شوید:")
     keyboard = [[InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
                 [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -268,12 +267,9 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "report_text": admin_report_text
         }
         
-        # --- ✨ ذخیره در حافظه موقت ربات (RAM) ---
-        # این اطلاعات با هر ری‌استارت Railway پاک می‌شود
         if 'structured_results' not in context.bot_data:
             context.bot_data['structured_results'] = {}
         context.bot_data['structured_results'][user.id] = result_data
-        # --- ✨ پایان ---
 
         for admin_id in ADMIN_IDS:
             try:
@@ -286,12 +282,12 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['state'] = ''
         await name_handler(update, context)
     else:
-        await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
+        await update.message.reply_text("برای شروع آزمون, دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید, نتیجه شما نمایش داده خواهد شد.")
+
+# --- بخش پنل ادمین ---
 
 def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
-    
-    # --- ✨ خواندن از حافظه موقت ربات ---
     all_results_data = context.bot_data.get('structured_results', {})
     if not all_results_data:
         return None
@@ -325,22 +321,20 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- تابع جامع دکمه‌ها (با راه‌حل نهایی) ---
-async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- ✨✨✨ شروع تعمیرات نهایی ✨✨✨ ---
+
+# --- تابع هندلر دکمه‌های آزمون (بدون تغییر نسبت به نسخه "سالم") ---
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
-    
     data = query.data.split('_')
-    action_group = data[0]
-
-    # --- بخش آزمون (بدون تغییر) ---
-    if action_group == "ans":
+    action = data[0]
+    if action == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
         context.user_data['answers'][question_index] = answer_index
         await send_question(query.message, context, message_id=query.message.message_id)
-        
-    elif action_group == "nav":
+    elif action == "nav":
         direction = data[1]
         current_index = int(data[2])
         if direction == "next":
@@ -348,63 +342,72 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         elif direction == "prev":
             context.user_data['current_question'] = current_index - 1
         await send_question(query.message, context, message_id=query.message.message_id)
-        
-    elif action_group == "finish":
+    elif action == "finish":
         await calculate_and_send_result(query.message, context, update.effective_user)
-        
-    # --- بخش ادمین ---
-    elif action_group == "admin":
-        user_id = query.effective_user.id
-        if user_id not in ADMIN_IDS:
-            await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
-            return
 
-        action_type = data[1] 
-        
-        if action_type == "show":
-            try:
-                target_user_id = int(data[2]) # چون user_id عددی است، int() را برمی‌گردانیم
-                
-                # --- ✨ خواندن از حافظه موقت ربات ---
-                all_results_data = context.bot_data.get('structured_results', {})
-                target_data = all_results_data.get(target_user_id)
-                
-                if not target_data:
-                    await context.bot.edit_message_text(
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id,
-                        text=f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد."
-                    )
-                    return
-                
-                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                # --- ✨ استفاده از context.bot.edit_message_text ---
+# --- تابع هندلر دکمه‌های ادمین (فقط این تابع تعمیر شده) ---
+async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user_id = query.effective_user.id
+    
+    if user_id not in ADMIN_IDS:
+        await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
+        return
+
+    await query.answer()
+    data = query.data.split('_')
+    action = data[1]
+
+    if action == "show":
+        try:
+            target_user_id = int(data[2])
+            all_results_data = context.bot_data.get('structured_results', {})
+            target_data = all_results_data.get(target_user_id)
+            
+            if not target_data:
                 await context.bot.edit_message_text(
                     chat_id=query.message.chat_id,
                     message_id=query.message.message_id,
-                    text=report_text, 
+                    text=f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد."
+                )
+                return
+            
+            report_text = target_data.get('report_text', "گزارشی یافت نشد.")
+            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
+            await context.bot.edit_message_text(
+                chat_id=query.message.chat_id,
+                message_id=query.message.message_id,
+                text=report_text, 
+                reply_markup=reply_markup, 
+                parse_mode='Markdown'
+            )
+        
+        except Exception as e:
+            logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
+            error_message = (f"❌ بروز خطا: `{str(e)}`")
+            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            try:
+                await context.bot.edit_message_text(
+                    chat_id=query.message.chat_id,
+                    message_id=query.message.message_id,
+                    text=error_message, 
                     reply_markup=reply_markup, 
                     parse_mode='Markdown'
                 )
-            
-            except Exception as e:
-                logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
-                error_message = (
-                    "❌ **بروز خطا در پنل ادمین** ❌\n\n"
-                    f"`{str(e)}`"
-                )
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                try:
-                    await context.bot.edit_message_text(
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id,
-                        text=error_message, 
-                        reply_markup=reply_markup, 
-                        parse_mode='Markdown'
-                    )
-                except Exception as
+            except Exception:
+                pass # اگر ارسال خطا هم شکست خورد, کاری نمی‌کنیم
+
+    elif action == "back":
+        keyboard = get_admin_panel_keyboard(context)
+        if not keyboard:
+            await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
+            return
+        
+        # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
+        await context.bot.edit_message_text(
+            chat_id=query.message.chat_id,
+            message
