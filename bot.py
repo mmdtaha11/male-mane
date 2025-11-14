@@ -3,7 +3,6 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-# اینها ایمپورت‌های نسخه ۲۰ هستند و درستند
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- تنظیمات اولیه ---
@@ -37,7 +36,76 @@ QUESTIONS = [
             {"text": "شاید این اشتباه دلیل خاصی داشته.", "scores": {"angel": 1, "human": 1, "demon": 0}},
         ],
     },
-    # ... (بقیه سوالات حذف شدند تا کد کوتاه شود، تو از کد کامل خودت استفاده کن) ...
+    {
+        "text": "🧩 سؤال ۳\n\nتو خلوتت بیشتر به چی فکر می‌کنی؟",
+        "answers": [
+            {"text": "آینده‌ای بهتر برای همه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "راهی برای پیشرفت خودم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "اینکه چه‌طور میشه دیگران رو درک کرد.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "کنترل و قدرتی که هنوز ندارم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "اینکه دنیا چرا این‌قدر بی‌نظم و بی‌رحمه.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+        ],
+    },
+    {
+        "text": "🧩 سؤال ۴\n\nوقتی یه نفر ناامید و خسته‌ست، چطور رفتار می‌کنی؟",
+        "answers": [
+            {"text": "باهاش حرف می‌زنم تا حس بهتری پیدا کنه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "بهش یادآوری می‌کنم که خودش باید قوی بمونه.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "اگه خودش خواست، کمکش می‌کنم.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "سکوت می‌کنم؛ بعضی چیزا نیاز به حرف ندارن.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "می‌ذارم خودش تا ته سقوط بره، چون فقط اونطوری رشد می‌کنه.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+        ],
+    },
+    {
+        "text": "🧩 سؤال ۵\n\nکدوم جمله بیشتر شبیه طرز فکرت هست؟",
+        "answers": [
+            {"text": "نور همیشه در تاریکی هم راهی پیدا می‌کنه.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "هیچ چیز مطلق نیست؛ فقط انتخاب‌ها مهمن.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "قدرت یعنی آزادی.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "همه‌چیز بهایی داره، حتی خوبی.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "عدالت بدون احساس، بی‌ارزشه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+        ],
+    },
+    {
+        "text": "🧩 سؤال ۶\n\nوقتی یه نفر بی‌دلیل ازت متنفره، چه واک-نشی نشون می‌دی؟",
+        "answers": [
+            {"text": "سعی می‌کنم دلیلش رو بفهمم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "برام مهم نیست، هرکس نظر خودش رو داره.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "ازش استفاده می‌کنم تا قوی‌تر شم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "فقط لبخند می‌زنم — نفرتش خودش رو می‌سوزونه.", "scores": {"angel": 1, "human": 0, "demon": 1}},
+            {"text": "بهش نشون می‌دم که اشتباه کرده.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+        ],
+    },
+    {
+        "text": "🧩 سؤال ۷\n\nدر انتخاب بین «آرامش» و «قدرت»، کدوم رو ترجیح می‌دی؟",
+        "answers": [
+            {"text": "آرامش، چون بدونش هیچ ارزشی نیست.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "قدرت، چون باهاش میشه از آرامش محافظت کرد.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "هیچ‌کدوم مطلق نیست، باید بینش تعادل ساخت.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "قدرت، چون فقط قوی‌ها زنده می‌مونن.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "آرامش، اما نه به قیمت سکوت در برابر ظلم.", "scores": {"angel": 1, "human": 0, "demon": 1}},
+        ],
+    },
+    {
+        "text": "🧩 سؤال ۸\n\nوقتی همه علیه تو هستن، چطور ادامه می‌دی؟",
+        "answers": [
+            {"text": "با ایمان به خودم پیش می‌رم.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "با منطق و صبر منتظر فرصت می‌مونم.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "با هر وسیله‌ای که دارم مقابله می‌کنم.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "ساکت می‌مونم و اجازه می‌دم زمان قضاوت کنه.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+            {"text": "می‌خندم، چون این یعنی خطرناک شدم.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+        ],
+    },
+    {
+        "text": "🧩 سؤال ۹\n\nکدوم حس بیشتر درونت غالب‌تره؟",
+        "answers": [
+            {"text": "همدلی.", "scores": {"angel": 2, "human": 0, "demon": 0}},
+            {"text": "کنجکاوی.", "scores": {"angel": 0, "human": 2, "demon": 0}},
+            {"text": "جاه‌طلبی.", "scores": {"angel": 0, "human": 0, "demon": 2}},
+            {"text": "بی‌اعتمادی.", "scores": {"angel": 0, "human": 1, "demon": 1}},
+            {"text": "نظم و کنترل.", "scores": {"angel": 1, "human": 1, "demon": 0}},
+        ],
+    },
     {
         "text": "🧩 سؤال ۱۰\n\nوقتی باید بین نجات یک بی‌گناه و نجات هزار نفر تصمیم بگیری، چطور انتخاب می‌کنی؟",
         "answers": [
@@ -141,6 +209,7 @@ def calculate_scores(user_answers):
             scores[race] += score
     return scores
 
+# --- ✨✨✨ تعمیر: ساخت گزارش ادمین به دو شکل (با مارک‌داون و ساده) ---
 async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE, user):
     final_scores = calculate_scores(context.user_data['answers'])
     player_name = context.user_data.get('player_name', 'بازیکن')
@@ -165,7 +234,8 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     await message.reply_text(result_text_user, reply_markup=reply_markup, parse_mode='Markdown')
 
     if ADMIN_IDS:
-        admin_report_text = (f"👤 گزارش تست جدید:\n\n"
+        # --- ۱. نسخه مارک‌داون (برای ارسال فوری) ---
+        admin_report_text_markdown = (f"👤 گزارش تست جدید:\n\n"
                            f"نام بازیکن: {player_name}\n"
                            f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
                            f"آیدی عددی: `{user.id}`\n\n"
@@ -175,13 +245,25 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
                            f"👤 انسان: {final_scores['human']}\n"
                            f"😈 شیطان: {final_scores['demon']}")
         
+        # --- ۲. نسخه متن ساده (برای پنل ادمین) ---
+        admin_report_text_plain = (f"👤 گزارش تست جدید:\n\n"
+                           f"نام بازیکن: {player_name}\n"
+                           f"نام کاربری تلگرام: @{user.username or 'ندارد'}\n"
+                           f"آیدی عددی: {user.id}\n\n" # <-- حذف `
+                           f"نتیجه اعلام شده به کاربر: {race_names[result_race]} (بین 👼/😈)\n\n" # <-- حذف **
+                           f"امتیازات کامل (برای بررسی ادمین):\n"
+                           f"👼 فرشته: {final_scores['angel']}\n"
+                           f"👤 انسان: {final_scores['human']}\n"
+                           f"😈 شیطان: {final_scores['demon']}")
+
         result_data = {
             "user_id": user.id,
             "player_name": player_name,
             "username": user.username or 'ندارد',
             "result_race_user": result_race,
             "final_scores": final_scores,
-            "report_text": admin_report_text
+            "report_text_markdown": admin_report_text_markdown, # <-- ذخیره نسخه مارک‌داون
+            "report_text_plain": admin_report_text_plain       # <-- ذخیره نسخه ساده
         }
 
         if 'structured_results' not in context.bot_data:
@@ -191,7 +273,8 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
 
         for admin_id in ADMIN_IDS:
             try:
-                await context.bot.send_message(chat_id=admin_id, text=admin_report_text, parse_mode='Markdown')
+                # --- ارسال فوری با مارک‌داون (که می‌دانیم کار می‌کند) ---
+                await context.bot.send_message(chat_id=admin_id, text=admin_report_text_markdown, parse_mode='Markdown')
             except Exception as e:
                 logger.error(f"ارسال پیام به ادمین {admin_id} با خطا مواجه شد: {e}")
 
@@ -268,7 +351,7 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
     elif action_group == "finish":
         await calculate_and_send_result(query.message, context, update.effective_user)
         
-    # --- بخش ادمین (تعمیر شده با حذف parse_mode) ---
+    # --- بخش ادمین (تعمیر شده با خواندن متن ساده) ---
     elif action_group == "admin":
         user_id = query.effective_user.id
         if user_id not in ADMIN_IDS:
@@ -291,57 +374,21 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                     )
                     return
                 
-                # گزارش را بدون مارک‌داون می‌خوانیم که متن بولد نداشته باشد
-                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
+                # --- ✨ تعمیر اصلی: خواندن نسخه متن ساده ---
+                report_text = target_data.get('report_text_plain', "گزارشی یافت نشد.") # <-- از _plain استفاده می‌کنیم
+                
                 keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # --- ✨ تعمیر ۱: استفاده از context.bot و حذف parse_mode ---
+                # --- ✨ تعمیر: استفاده از context.bot و حذف parse_mode ---
                 await context.bot.edit_message_text(
                     chat_id=query.message.chat_id,
                     message_id=query.message.message_id,
                     text=report_text, 
                     reply_markup=reply_markup 
-                    # parse_mode='Markdown'  <--- عامل کرش حذف شد
+                    # parse_mode='Markdown'  <--- حذف شد
                 )
             
             except Exception as e:
                 logger.warning(f"Failed to edit message for admin panel: {e}")
-                # --- fallback ساده بدون parse_mode ---
-                await query.message.reply_text(text=report_text, reply_markup=reply_markup)
-
-        elif action_type == "back": 
-            keyboard = get_admin_panel_keyboard(context)
-            if not keyboard:
-                await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
-                return
-            
-            # --- ✨ تعمیر ۲: استفاده از context.bot و حذف parse_mode ---
-            await context.bot.edit_message_text(
-                chat_id=query.message.chat_id,
-                message_id=query.message.message_id,
-                text="بخش مدیریت ادمین:\n\n" # متن دیگر بولد نیست
-                     "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
-                reply_markup=keyboard
-                # parse_mode='Markdown'  <--- عامل کرش حذف شد
-            )
-# --- ✨✨✨ پایان تعمیرات ---
-
-
-def main():
-    # این ساختار (Application.builder) کد نسخه ۲۰ است و درست است
-    application = Application.builder().token(BOT_TOKEN).build()
-    
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("admin", admin_panel_command))
-    
-    # --- استفاده از همان ساختار سالم کد خودت ---
-    application.add_handler(CallbackQueryHandler(global_button_handler))
-    
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
-    
-    print("ربات (نسخه نهایی تعمیر شده - حذف parse_mode) در حال اجراست...")
-    application.run_polling()
-
-if __name__ == "__main__":
-    main()
+          
