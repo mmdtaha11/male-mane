@@ -2,6 +2,10 @@
 
 import logging
 import random
+import os  # <-- کتابخانه 'os' برای خواندن متغیرهای Railway اضافه شد
+import json # <-- کتابخانه 'json' برای تبدیل دیتا اضافه شد
+import redis # <-- کتابخانه 'redis' اضافه شد
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, 
@@ -20,6 +24,36 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+
+# --- ✨✨✨ بخش اتصال به دیتابیس Redis --- ✨✨✨
+
+# 1. آدرس دیتابیس را از متغیرهای Railway بخوان
+#    !!! اگر اسم متغیر شما در Railway فرق دارد، "REDIS_URL" را به آن تغییر بده !!!
+REDIS_URL_FROM_RAILWAY = os.environ.get("REDIS_URL")
+
+if not REDIS_URL_FROM_RAILWAY:
+    logger.error("!!! متغیر REDIS_URL در Railway پیدا نشد. ربات متوقف می‌شود. !!!")
+    # اگر در حال تست روی کامپیوتر خود هستی، می‌توانی موقتاً این خط را کامنت کنی
+    # و از یک دیتابیس محلی استفاده کنی، اما برای Railway این خط حیاتی است.
+    raise ValueError("REDIS_URL environment variable not set.")
+
+try:
+    # 2. به دیتابیس متصل شو
+    # از 'decode_responses=True' استفاده می‌کنیم تا خروجی‌ها به صورت متن (string) باشند
+    db = redis.from_url(REDIS_URL_FROM_RAILWAY, decode_responses=True)
+    # 3. اتصال را تست کن
+    db.ping()
+    logger.info("--- ✅ به دیتابیس Redis با موفقیت متصل شدیم. ---")
+except redis.exceptions.ConnectionError as e:
+    logger.error(f"!!! خطای اتصال به Redis: {e} !!!")
+    raise
+
+# یک پیشوند برای کلیدها تعریف می‌کنیم تا اطلاعات ربات با چیزهای دیگر قاطی نشود
+DB_PREFIX = "mistress_bot:result:"
+
+# --- ✨✨✨ پایان بخش دیتابیس --- ✨✨✨
+
 
 # --- داده‌های سوالات و گروه‌ها (بدون تغییر) ---
 QUESTIONS = [
@@ -139,27 +173,36 @@ race_names = {"angel": "فرشته 👼", "human": "انسان 👤", "demon": "
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
-    if 'result_race' in context.user_data:
-        player_name = context.user_data.get('player_name', 'شما')
-        result_race = context.user_data['result_race']
-        
-        if result_race == "human":
-             result_text = (f"سلام {player_name}!\n"
-                       f"شما قبلاً در آزمون شرکت کرده‌اید.\n\n"
-                       f"نتیجه شما: **{race_names[result_race]}**\n\n"
-                       f"می‌توانید وارد گپ اصلی شوید:")
-             keyboard = [[InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
-        else:
-            result_text = (f"سلام {player_name}!\n"
+    # --- ✨ تغییر: چک کردن نتیجه قبلی از دیتابیس Redis ---
+    user_key = f"{DB_PREFIX}{user_id}"
+    try:
+        stored_data_json = db.get(user_key)
+        if stored_data_json:
+            # اگر دیتا در دیتابیس بود، آن را بخوان
+            stored_data = json.loads(stored_data_json)
+            player_name = stored_data.get('player_name', 'شما')
+            result_race = stored_data.get('result_race_user') # نتیجه‌ای که کاربر دیده
+
+            if result_race == "human":
+                 result_text = (f"سلام {player_name}!\n"
                            f"شما قبلاً در آزمون شرکت کرده‌اید.\n\n"
                            f"نتیجه شما: **{race_names[result_race]}**\n\n"
-                           f"می‌توانید از طریق دکمه‌های زیر وارد گروه‌ها شوید:")
-            keyboard = [[InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
-                        [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
-        return
+                           f"می‌توانید وارد گپ اصلی شوید:")
+                 keyboard = [[InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
+            else:
+                result_text = (f"سلام {player_name}!\n"
+                               f"شما قبلاً در آزمون شرکت کرده‌اید.\n\n"
+                               f"نتیجه شما: **{race_names[result_race]}**\n\n"
+                               f"می‌توانید از طریق دکمه‌های زیر وارد گروه‌ها شوید:")
+                keyboard = [[InlineKeyboardButton(f"ورود به گروه {race_names[result_race]}", url=GROUP_LINKS[result_race])],
+                            [InlineKeyboardButton("ورود به گپ اصلی", url=GROUP_LINKS["main"])]]
+            
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await update.message.reply_text(result_text, reply_markup=reply_markup, parse_mode='Markdown')
+            return
+    except Exception as e:
+        logger.error(f"خطا در خواندن Redis در /start: {e}")
+        # اگر دیتابیس خطا داد، اشکالی ندارد، اجازه می‌دهیم تست دوباره انجام شود
         
     context.user_data['state'] = 'awaiting_name'
     await update.message.reply_text("سلام! به رول پلی میستریس ورلد خوش اومدی.\nبرای شروع، لطفاً نام خودت رو وارد کن:")
@@ -232,8 +275,6 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
     user_races_sorted = sorted(scores_for_user_result.items(), 
                                key=lambda item: (-item[1], ['angel', 'demon'].index(item[0])))
     result_race = user_races_sorted[0][0]
-
-    context.user_data['result_race'] = result_race
     
     result_text_user = (f"خب {player_name}، آزمون تموم شد!\n\n"
                        f"نتیجه نهایی: **شما یک {race_names[result_race]} هستید!**\n\n"
@@ -263,10 +304,17 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "report_text": admin_report_text
         }
         
-        if 'structured_results' not in context.bot_data:
-            context.bot_data['structured_results'] = {}
+        # --- ✨ تغییر: ذخیره کردن نتیجه در دیتابیس Redis ---
+        try:
+            user_key = f"{DB_PREFIX}{user.id}"
+            # دیتا را به متن JSON تبدیل می‌کنیم تا در Redis ذخیره شود
+            result_data_json = json.dumps(result_data, ensure_ascii=False)
+            db.set(user_key, result_data_json)
+            logger.info(f"نتیجه کاربر {user.id} در Redis ذخیره شد.")
+        except Exception as e:
+            logger.error(f"!!! خطا در ذخیره کردن در Redis: {e} !!!")
         
-        context.bot_data['structured_results'][user.id] = result_data
+        # --- پایان تغییر ---
 
         for admin_id in ADMIN_IDS:
             try:
@@ -283,21 +331,36 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
-    all_results_data = context.bot_data.get('structured_results', {})
-    if not all_results_data:
-        return None
+    
+    # --- ✨ تغییر: خواندن لیست کاربران از دیتابیس Redis ---
+    try:
+        # تمام کلیدهایی که با پیشوند ما شروع می‌شوند را پیدا کن
+        user_keys = db.keys(f"{DB_PREFIX}*")
+        if not user_keys:
+            return None
 
-    sorted_users = sorted(all_results_data.values(), key=lambda x: x['player_name'])
-    
-    for user_data in sorted_users:
-        user_id = user_data['user_id']
-        player_name = user_data['player_name']
-        username = user_data['username']
-        button_text = f"{player_name} (@{username})"
-        callback_data = f"admin_show_{user_id}"
-        keyboard.append([InlineKeyboardButton(button_text, callback_data=callback_data)])
-    
-    return InlineKeyboardMarkup(keyboard)
+        # اطلاعات هر کاربر را یکی‌یکی بخوان
+        for key in user_keys:
+            user_data_json = db.get(key)
+            if user_data_json:
+                user_data = json.loads(user_data_json)
+                
+                user_id = user_data.get('user_id', key.split(':')[-1]) # آیدی عددی
+                player_name = user_data.get('player_name', 'ناشناس')
+                username = user_data.get('username', 'ندارد')
+                
+                button_text = f"{player_name} (@{username})"
+                callback_data = f"admin_show_{user_id}"
+                keyboard.append([InlineKeyboardButton(button_text, callback_data=callback_data)])
+        
+        # مرتب‌سازی بر اساس نام (اختیاری اما بهتر)
+        keyboard.sort(key=lambda b: b[0].text)
+        return InlineKeyboardMarkup(keyboard)
+
+    except Exception as e:
+        logger.error(f"!!! خطا در خواندن لیست ادمین از Redis: {e} !!!")
+        return None
+    # --- پایان تغییر ---
 
 async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -308,7 +371,7 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     keyboard = get_admin_panel_keyboard(context)
     
     if not keyboard:
-        await update.message.reply_text("هنوز هیچ نتیجه‌ای در ربات ثبت نشده است.")
+        await update.message.reply_text("هنوز هیچ نتیجه‌ای در دیتابیس ثبت نشده است.")
         return
     
     await update.message.reply_text("**بخش مدیریت ادمین:**\n\n"
@@ -316,7 +379,7 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- تابع جامع دکمه‌ها (با راه‌حل نهایی) ---
+# --- تابع جامع دکمه‌ها ---
 async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
@@ -354,57 +417,4 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         
         if action_type == "show":
             try:
-                target_user_id = int(data[2])
-                all_results_data = context.bot_data.get('structured_results', {})
-                target_data = all_results_data.get(target_user_id)
-                
-                if not target_data:
-                    await context.bot.edit_message_text(
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id,
-                        text=f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد."
-                    )
-                    return
-                
-                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                await context.bot.edit_message_text(
-                    chat_id=query.message.chat_id,
-                    message_id=query.message.message_id,
-                    text=report_text, 
-                    reply_markup=reply_markup, 
-                    parse_mode='Markdown'
-                )
-            
-            except Exception as e:
-                logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
-                error_message = (
-                    "❌ **بروز خطا در پنل ادمین** ❌\n\n"
-                    f"`{str(e)}`"
-                )
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                try:
-                    await context.bot.edit_message_text(
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id,
-                        text=error_message, 
-                        reply_markup=reply_markup, 
-                        parse_mode='Markdown'
-                    )
-                except Exception as inner_e:
-                    logger.error(f"Failed to even send error message via edit: {inner_e}")
-                    await context.bot.send_message(chat_id=query.effective_chat.id, text=error_message, reply_markup=reply_markup, parse_mode='Markdown')
-
-        elif action_type == "back":
-            keyboard = get_admin_panel_keyboard(context)
-            if not keyboard:
-                await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
-                return
-            
-            await context.bot.edit_message_text(
-                chat_id=query.message.chat_id,
-           
+                target_user_id = data[2] 
