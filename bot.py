@@ -3,15 +3,7 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application, 
-    CommandHandler, 
-    CallbackQueryHandler, 
-    MessageHandler, 
-    filters, 
-    ContextTypes
-)
-# PicklePersistence از اینجا حذف شد
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # --- تنظیمات اولیه ---
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
@@ -22,7 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- داده‌های سوالات و گروه‌ها (بدون تغییر) ---
+# --- داده‌های سوالات و گروه‌ها ---
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -258,8 +250,7 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "final_scores": final_scores,
             "report_text": admin_report_text
         }
-        
-        # ذخیره در حافظه موقت (RAM)
+
         if 'structured_results' not in context.bot_data:
             context.bot_data['structured_results'] = {}
         
@@ -277,6 +268,8 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await name_handler(update, context)
     else:
         await update.message.reply_text("برای شروع آزمون، دستور /start را ارسال کنید. اگر قبلا آزمون داده‌اید، نتیجه شما نمایش داده خواهد شد.")
+
+# --- بخش پنل ادمین (بدون تغییر) ---
 
 def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
@@ -313,15 +306,15 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- تابع جامع دکمه‌ها (با نمایش خطا در چت) ---
+# --- ✨✨✨ تابع جدید و ادغام شده برای همه دکمه‌ها ✨✨✨
 async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
     
     data = query.data.split('_')
-    action_group = data[0]
+    action_group = data[0] # می‌شود: "ans", "nav", "finish", or "admin"
 
-    # --- بخش آزمون (بدون تغییر) ---
+    # --- بخش آزمون (کد قبلی button_handler) ---
     if action_group == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
@@ -340,67 +333,65 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
     elif action_group == "finish":
         await calculate_and_send_result(query.message, context, update.effective_user)
         
-    # --- بخش ادمین ---
+    # --- بخش ادمین (کد قبلی admin_button_handler) ---
     elif action_group == "admin":
         user_id = query.effective_user.id
+        # چک کردن ادمین
         if user_id not in ADMIN_IDS:
             await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
             return
 
-        action_type = data[1] 
+        action_type = data[1] # می‌شود: "show" or "back"
         
         if action_type == "show":
-            try:
-                target_user_id = int(data[2])
-                all_results_data = context.bot_data.get('structured_results', {})
-                target_data = all_results_data.get(target_user_id)
-                
-                if not target_data:
-                    await query.edit_message_text(f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد.")
-                    return
-                
-                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                await query.edit_message_text(text=report_text, reply_markup=reply_markup, parse_mode='Markdown')
+            target_user_id = int(data[2])
+            all_results_data = context.bot_data.get('structured_results', {})
+            target_data = all_results_data.get(target_user_id)
             
+            if not target_data:
+                await query.edit_message_text("خطا: اطلاعات این کاربر یافت نشد.")
+                return
+            
+            report_text = target_data.get('report_text', "گزارشی یافت نشد.")
+            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            try:
+                # ویرایش پیام برای نمایش نتیجه
+                await query.edit_message_text(text=report_text, reply_markup=reply_markup, parse_mode='Markdown')
             except Exception as e:
-                # --- ارسال خطا به چت ادمین ---
-                logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
-                
-                error_message = (
-                    "❌ **بروز خطا در پنل ادمین** ❌\n\n"
-                    "هنگام تلاش برای نمایش نتیجه، این خطا رخ داد:\n\n"
-                    f"`{str(e)}`\n\n"
-                    "لطفاً این متن خطا را بررسی کنید. "
-                    "(دکمه بازگشت به لیست در زیر آمده است)"
-                )
-                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
-                try:
-                    await query.edit_message_text(text=error_message, reply_markup=reply_markup, parse_mode='Markdown')
-                except Exception as inner_e:
-                    logger.error(f"Failed to even send error message via edit: {inner_e}")
-                    await context.bot.send_message(chat_id=query.effective_chat.id, text=error_message, reply_markup=reply_markup, parse_mode='Markdown')
+                logger.warning(f"Failed to edit message for admin panel: {e}")
+                # اگر ویرایش ممکن نبود (مثلا متن تکراری بود)، پیام جدید می‌فرستد
+                await query.message.reply_text(text=report_text, reply_markup=reply_markup, parse_mode='Markdown')
 
-        elif action_type == "back":
+        elif action_type == "back": # دکمه "بازگشت به لیست"
             keyboard = get_admin_panel_keyboard(context)
             if not keyboard:
                 await query.edit_message_text("هنوز هیچ نتیجه‌ای ثبت نشده است.")
                 return
             
+            # ویرایش پیام برای نمایش مجدد لیست
             await query.edit_message_text("**بخش مدیریت ادمین:**\n\n"
                                           "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
                                           reply_markup=keyboard,
                                           parse_mode='Markdown')
+# --- ✨✨✨ پایان تابع ادغام شده ✨✨✨
 
-# --- ✨✨✨ تابع main به حالت بدون Persistence بازگشت ✨✨✨ ---
+
 def main():
-    # آبجکت my_persistence حذف شد
+    application = Application.builder().token(BOT_TOKEN).build()
     
-    application = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        # خط .persist
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("admin", admin_panel_command))
+    
+    # --- ✨✨✨ تغییر اصلی: ثبت فقط یک هندلر برای همه دکمه‌ها ✨✨✨
+    application.add_handler(CallbackQueryHandler(global_button_handler))
+    # توابع button_handler و admin_button_handler حذف شدند
+    
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
+    
+    print("ربات (نسخه اصلاح شده با هندلر جامع) در حال اجراست...")
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
