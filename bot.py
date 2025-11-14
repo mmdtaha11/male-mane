@@ -3,7 +3,6 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-# --- ✨ تغییر ۱: ایمپورت کردن PicklePersistence ---
 from telegram.ext import (
     Application, 
     CommandHandler, 
@@ -260,7 +259,6 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "report_text": admin_report_text
         }
         
-        # ذخیره‌سازی در bot_data (که حالا دائمی است)
         if 'structured_results' not in context.bot_data:
             context.bot_data['structured_results'] = {}
         
@@ -283,7 +281,6 @@ async def message_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def get_admin_panel_keyboard(context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
-    # خواندن از bot_data (که حالا دائمی است)
     all_results_data = context.bot_data.get('structured_results', {})
     if not all_results_data:
         return None
@@ -317,13 +314,20 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- تابع ادغام شده دکمه‌ها (بدون تغییر) ---
+# --- ✨✨✨ تابع ادغام شده دکمه‌ها (با لاگ برای دیباگ) ✨✨✨
 async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
     
+    # --- ✨ لاگ ۱: ثبت هر کلیک ---
+    logger.info(f"--- Global Button Handler Triggered ---")
+    logger.info(f"Callback Data: {query.data}")
+    
     data = query.data.split('_')
     action_group = data[0]
+    
+    # --- ✨ لاگ ۲: ثبت نوع کلیک ---
+    logger.info(f"Action Group: {action_group}")
 
     # --- بخش آزمون ---
     if action_group == "ans":
@@ -346,66 +350,57 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         
     # --- بخش ادمین ---
     elif action_group == "admin":
+        # --- ✨ لاگ ۳: ورود به بخش ادمین ---
+        logger.info(f"Entered ADMIN block.")
         user_id = query.effective_user.id
         if user_id not in ADMIN_IDS:
+            logger.warning(f"Unauthorized admin access attempt by {user_id}")
             await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
             return
 
+        # --- ✨ لاگ ۴: تایید ادمین ---
+        logger.info(f"Admin {user_id} authenticated.")
         action_type = data[1] 
+        logger.info(f"Admin Action Type: {action_type}")
         
         if action_type == "show":
-            target_user_id = int(data[2])
-            all_results_data = context.bot_data.get('structured_results', {})
-            target_data = all_results_data.get(target_user_id)
-            
-            if not target_data:
-                await query.edit_message_text("خطا: اطلاعات این کاربر یافت نشد.")
-                return
-            
-            report_text = target_data.get('report_text', "گزارشی یافت نشد.")
-            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
             try:
+                target_user_id_str = data[2]
+                logger.info(f"Target User ID (str): {target_user_id_str}") # لاگ ۵
+                
+                target_user_id = int(target_user_id_str)
+                logger.info(f"Target User ID (int): {target_user_id}") # لاگ ۶
+                
+                all_results_data = context.bot_data.get('structured_results', {})
+                if not all_results_data:
+                    logger.warning("structured_results in bot_data is EMPTY.") # لاگ خطا
+                    await query.edit_message_text("خطا: هیچ داده‌ای در bot_data یافت نشد.")
+                    return
+
+                logger.info(f"Fetching data for key: {target_user_id}") # لاگ ۷
+                target_data = all_results_data.get(target_user_id)
+                
+                if not target_data:
+                    logger.warning(f"Data for key {target_user_id} is None.") # لاگ خطا
+                    await query.edit_message_text(f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد.")
+                    return
+                
+                logger.info(f"Data found successfully.") # لاگ ۸
+                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
+                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                
                 await query.edit_message_text(text=report_text, reply_markup=reply_markup, parse_mode='Markdown')
+                logger.info(f"Successfully edited message to show report for {target_user_id}.") # لاگ ۹
+
             except Exception as e:
-                logger.warning(f"Failed to edit message for admin panel: {e}")
-                await query.message.reply_text(text=report_text, reply_markup=reply_markup, parse_mode='Markdown')
+                # --- ✨ لاگ خطا ---
+                logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
+                await query.edit_message_text(f"خطای جدی در پردازش: {e}")
 
         elif action_type == "back":
+            logger.info("Admin action 'back' triggered.")
             keyboard = get_admin_panel_keyboard(context)
             if not keyboard:
                 await query.edit_message_text("هنوز هیچ نتیجه‌ای ثبت نشده است.")
-                return
-            
-            await query.edit_message_text("**بخش مدیریت ادمین:**\n\n"
-                                          "لطفاً کاربری را برای مشاهده نتیجه انتخاب کنید:", 
-                                          reply_markup=keyboard,
-                                          parse_mode='Markdown')
-
-# --- ✨✨✨ تغییرات اصلی در تابع main ✨✨✨ ---
-def main():
-    # ۱. ساخت آبجکت ذخیره‌سازی
-    # اطلاعات در فایلی به نام 'bot_data.pickle' در کنار فایل پایتون ذخیره می‌شود
-    # می‌توانید اسم فایل را به دلخواه تغییر دهید
-    my_persistence = PicklePersistence(filepath='bot_persistence.pickle')
-
-    # ۲. معرفی آبجکت ذخیره‌سازی به Application.builder
-    application = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .persistence(my_persistence)  # <--- این خط اضافه شد
-        .build()
-    )
-    
-    # ثبت هندلرها (بدون تغییر)
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("admin", admin_panel_command))
-    application.add_handler(CallbackQueryHandler(global_button_handler))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_router))
-    
-    print("ربات (نسخه نهایی با ذخیره‌سازی دائمی) در حال اجراست...")
-    application.run_polling()
-
-if __name__ == "__main__":
-    main()
+ 
