@@ -203,7 +203,6 @@ async def send_question(message, context: ContextTypes.DEFAULT_TYPE, message_id=
     question = QUESTIONS[question_index]
     keyboard = build_question_keyboard(question_index, context.user_data.get('answers', {}))
     if message_id:
-        # --- ✨ تعمیر ۱: استفاده از context.bot برای پایداری ---
         try:
             await context.bot.edit_message_text(
                 chat_id=message.chat_id, 
@@ -321,20 +320,22 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                                    reply_markup=keyboard,
                                    parse_mode='Markdown')
 
-# --- ✨✨✨ شروع تعمیرات نهایی ✨✨✨ ---
-
-# --- تابع هندلر دکمه‌های آزمون (بدون تغییر نسبت به نسخه "سالم") ---
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- ✨✨✨ تابع جامع دکمه‌ها (ساختار "سالم" + تعمیر نهایی) ✨✨✨
+async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer() 
+    
     data = query.data.split('_')
-    action = data[0]
-    if action == "ans":
+    action_group = data[0]
+
+    # --- بخش آزمون ---
+    if action_group == "ans":
         question_index = int(data[1])
         answer_index = int(data[2])
         context.user_data['answers'][question_index] = answer_index
         await send_question(query.message, context, message_id=query.message.message_id)
-    elif action == "nav":
+        
+    elif action_group == "nav":
         direction = data[1]
         current_index = int(data[2])
         if direction == "next":
@@ -342,72 +343,68 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif direction == "prev":
             context.user_data['current_question'] = current_index - 1
         await send_question(query.message, context, message_id=query.message.message_id)
-    elif action == "finish":
-        await calculate_and_send_result(query.message, context, update.effective_user)
-
-# --- تابع هندلر دکمه‌های ادمین (فقط این تابع تعمیر شده) ---
-async def admin_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_id = query.effective_user.id
-    
-    if user_id not in ADMIN_IDS:
-        await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
-        return
-
-    await query.answer()
-    data = query.data.split('_')
-    action = data[1]
-
-    if action == "show":
-        try:
-            target_user_id = int(data[2])
-            all_results_data = context.bot_data.get('structured_results', {})
-            target_data = all_results_data.get(target_user_id)
-            
-            if not target_data:
-                await context.bot.edit_message_text(
-                    chat_id=query.message.chat_id,
-                    message_id=query.message.message_id,
-                    text=f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد."
-                )
-                return
-            
-            report_text = target_data.get('report_text', "گزارشی یافت نشد.")
-            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
-            await context.bot.edit_message_text(
-                chat_id=query.message.chat_id,
-                message_id=query.message.message_id,
-                text=report_text, 
-                reply_markup=reply_markup, 
-                parse_mode='Markdown'
-            )
         
-        except Exception as e:
-            logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
-            error_message = (f"❌ بروز خطا: `{str(e)}`")
-            keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+    elif action_group == "finish":
+        await calculate_and_send_result(query.message, context, update.effective_user)
+        
+    # --- بخش ادمین ---
+    elif action_group == "admin":
+        user_id = query.effective_user.id
+        if user_id not in ADMIN_IDS:
+            await query.answer("❌ دسترسی غیرمجاز.", show_alert=True)
+            return
+
+        action_type = data[1] 
+        
+        if action_type == "show":
             try:
+                target_user_id = int(data[2])
+                all_results_data = context.bot_data.get('structured_results', {})
+                target_data = all_results_data.get(target_user_id)
+                
+                if not target_data:
+                    # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
+                    await context.bot.edit_message_text(
+                        chat_id=query.message.chat_id,
+                        message_id=query.message.message_id,
+                        text=f"خطا: اطلاعات کاربر با آیدی {target_user_id} یافت نشد."
+                    )
+                    return
+                
+                report_text = target_data.get('report_text', "گزارشی یافت نشد.")
+                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                
+                # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
                 await context.bot.edit_message_text(
                     chat_id=query.message.chat_id,
                     message_id=query.message.message_id,
-                    text=error_message, 
+                    text=report_text, 
                     reply_markup=reply_markup, 
                     parse_mode='Markdown'
                 )
-            except Exception:
-                pass # اگر ارسال خطا هم شکست خورد, کاری نمی‌کنیم
+            
+            except Exception as e:
+                logger.error(f"!!! CRITICAL ERROR in 'admin_show' block: {e}", exc_info=True)
+                error_message = (f"❌ بروز خطا: `{str(e)}`")
+                keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                try:
+                    await context.bot.edit_message_text(
+                        chat_id=query.message.chat_id,
+                        message_id=query.message.message_id,
+                        text=error_message, 
+                        reply_markup=reply_markup, 
+                        parse_mode='Markdown'
+                    )
+                except Exception:
+                    pass 
 
-    elif action == "back":
-        keyboard = get_admin_panel_keyboard(context)
-        if not keyboard:
-            await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
-            return
-        
-        # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
-        await context.bot.edit_message_text(
-            chat_id=query.message.chat_id,
-            message
+        elif action_type == "back":
+            keyboard = get_admin_panel_keyboard(context)
+            if not keyboard:
+                await context.bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id, text="هنوز هیچ نتیجه‌ای ثبت نشده است.")
+                return
+            
+            # --- ✨ تعمیر اصلی: استفاده از context.bot.edit_message_text ---
+            await context.bot.ed
