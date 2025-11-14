@@ -417,4 +417,4 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         
         if action_type == "show":
             try:
-                target_user_id = data[2] 
+                target_user_id = data[2]
