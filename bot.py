@@ -407,4 +407,4 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
             
             await context.bot.edit_message_text(
                 chat_id=query.message.chat_id,
-            
+           
