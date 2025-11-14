@@ -9,9 +9,9 @@ from telegram.ext import (
     CallbackQueryHandler, 
     MessageHandler, 
     filters, 
-    ContextTypes, 
-    PicklePersistence
+    ContextTypes
 )
+# PicklePersistence از اینجا حذف شد
 
 # --- تنظیمات اولیه ---
 BOT_TOKEN = "7440922727:AAEMmpc3V-wvHDifg9uCV4h0mXxk_IqIqh4"
@@ -22,7 +22,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- داده‌های سوالات و گروه‌ها ---
+# --- داده‌های سوالات و گروه‌ها (بدون تغییر) ---
 QUESTIONS = [
     {
         "text": "🧩 سؤال ۱\n\nوقتی بین دو دوستت اختلاف پیش میاد، معمولاً چی‌کار می‌کنی؟",
@@ -259,6 +259,7 @@ async def calculate_and_send_result(message, context: ContextTypes.DEFAULT_TYPE,
             "report_text": admin_report_text
         }
         
+        # ذخیره در حافظه موقت (RAM)
         if 'structured_results' not in context.bot_data:
             context.bot_data['structured_results'] = {}
         
@@ -350,7 +351,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         
         if action_type == "show":
             try:
-                # --- بلوک try: همان کد قبلی ---
                 target_user_id = int(data[2])
                 all_results_data = context.bot_data.get('structured_results', {})
                 target_data = all_results_data.get(target_user_id)
@@ -363,7 +363,6 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                 keyboard = [[InlineKeyboardButton("⬅️ بازگشت به لیست", callback_data="admin_back_list")]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                # --- ✨ این همان خطی است که در عکس شما شکسته شده بود ---
                 await query.edit_message_text(text=report_text, reply_markup=reply_markup, parse_mode='Markdown')
             
             except Exception as e:
@@ -397,8 +396,11 @@ async def global_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
                                           reply_markup=keyboard,
                                           parse_mode='Markdown')
 
-# --- تابع main (با ذخیره‌سازی دائمی) ---
+# --- ✨✨✨ تابع main به حالت بدون Persistence بازگشت ✨✨✨ ---
 def main():
-    my_persistence = PicklePersistence(filepath='bot_persistence.pickle')
-
-    application = 
+    # آبجکت my_persistence حذف شد
+    
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        # خط .persist
